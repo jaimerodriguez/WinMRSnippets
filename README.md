@@ -5,8 +5,7 @@ Sample code snippets for Windows Mixed Reality Application Developers
 Until this gets feature, code complete & stable, here is a brief log. 
 
 
-# 12/4 Status: #
-initial check-in code is quite raw...  Expect two days of clean-up are needed, but public interfaces won't change much. 
+**12/4 Status:  Initial check-in code is quite raw...  Expect two days of clean-up are needed, but public interfaces won't change much.** 
 
 
 # How to use te Input Module Sample # 
