@@ -22,7 +22,7 @@ So, if controler is active, gaze timeout won't be used.
   - TimeToGazeClick == the length in seconds for a control to have focus when gaze automatically clicks (default is 3 seconds). Make sure if using debug cursor that it matches CircularLoader's FinalTime.. or make FinalTime 0. 
   
   
-#To-dos:# 
+# To-dos:# 
 
 ##WinMRInputModule ## 
   LayerMasks for raycasting not yet implemented 
@@ -36,7 +36,7 @@ So, if controler is active, gaze timeout won't be used.
 - Outside of the extra verbosity in these samples, they should be fine. the goal is for people to learn from them. 
 
 
-##All-up:## 
+## All-up:## 
 - Refactoring needed everywhere. 
 - Create Clean, polished samples... 
--  Lots more 
+-  **Lots more** 
