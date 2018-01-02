@@ -136,7 +136,7 @@ Transform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 87695700}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.975, y: 1.23, z: 2}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -159,7 +159,7 @@ MonoBehaviour:
   FilterInput: 1
   inputType: 1
   GLTFMaterial: {fileID: 2100000, guid: f821a0098f2d80f49a94f9c9aeabe86b, type: 2}
-  ShowDebugAxis: 0
+  ShowDebugAxis: 1
   AnimateControllerModel: 1
 --- !u!114 &87695703
 MonoBehaviour:

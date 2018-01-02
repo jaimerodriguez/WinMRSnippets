@@ -63,7 +63,7 @@ namespace HoloToolkit.Unity.InputModule
 
 #if EXTEND_TOOLKIT_MOTION_CONTROLLER
             ControllerModelProvider.Instance.StartListening();
-            this.ShowDebugAxis = true; 
+           
 #endif 
 
 #if UNITY_WSA && UNITY_2017_2_OR_NEWER
@@ -158,6 +158,9 @@ namespace HoloToolkit.Unity.InputModule
                     {
                         UpdateDebugAxis(sourceState);
                     }
+
+                    DrawPointer(sourceState); 
+
 #endif
                 }
             }

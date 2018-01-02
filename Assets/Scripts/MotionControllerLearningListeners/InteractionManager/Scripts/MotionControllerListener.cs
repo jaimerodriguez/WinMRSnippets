@@ -388,9 +388,9 @@ public class MotionControllerListener : MonoBehaviour , IControllerVisualizer
                     if (axis != null)
                     {
                         if ( hasPointerForward && hasPointerPosition )
-                            axis.SetValues(state.PointerPosition, pointerForward * 2, state.PointerRotation, AxisRenderer.ControllerElement.Pointer);
+                            axis.SetWorldValues(state.PointerPosition, pointerForward  , state.PointerRotation, AxisRenderer.ControllerElement.Pointer);
                         if ( hasGripForward && hasPosition  )
-                            axis.SetValues(state.Position, gripForward * 2, state.Rotation, AxisRenderer.ControllerElement.Grip);
+                            axis.SetWorldValues(state.Position, gripForward  , state.Rotation, AxisRenderer.ControllerElement.Grip);
                     }
                 } 
             }

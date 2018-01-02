@@ -54,7 +54,9 @@ public class ControllerHelpers
         float timeOut = 15f;
         float endTime = Time.time + timeOut;
         bool modelFound = false;
-        TraceHelper.Log("Attaching model");
+#if TRACING_VERBOSE 
+        TraceHelper.Log(string.Format ( "Attaching model {0} to {1}", productId, target.name));
+#endif 
         while (Time.time < endTime && !modelFound)
         {
             if (ControllerModelProvider.Instance.Contains(productId ))
@@ -68,7 +70,9 @@ public class ControllerHelpers
                     gltfScript.NoColorMaterial = noColorMaterial;
                     gltfScript.GLTFData = gltfModel;
                     yield return gltfScript.LoadModel();
+#if TRACING_VERBOSE
                     TraceHelper.Log("Model attached for " + productId );
+#endif 
                     modelFound = true;
                 }
             }

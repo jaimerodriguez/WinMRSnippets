@@ -3,15 +3,14 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 
-
-#if UNITY_5
-using UnityEngine.VR;
-using UnityEngine.VR.WSA.Input;
-using XRNode = UnityEngine.VR.VRNode;
-#else
 using UnityEngine.XR;
 using UnityEngine.XR.WSA.Input;
+ 
+
+#if UNITY_EDITOR_WIN
+using System.Runtime.InteropServices;
 #endif
+
 
 using HoloToolkit.Unity.InputModule;
 using GLTF;
@@ -44,6 +43,12 @@ public class NewControllerModelAvailableEventArgs: EventArgs
 
 public class ControllerModelProvider
 {
+
+#if UNITY_EDITOR_WIN
+    [DllImport("MotionControllerModel")]
+    private static extern bool TryGetMotionControllerModel([In] uint controllerId, [Out] out uint outputSize, [Out] out IntPtr outputBuffer);
+#endif
+
 
     #region private members 
     private Dictionary<string, byte[]> cachedModels;
@@ -81,18 +86,13 @@ public class ControllerModelProvider
         TraceHelper.Log("ControllerModelProvider StartListening"); 
         if ( !IsListening)
         {
-#if !UNITY_EDITOR
-            Start();             
-            
-#else 
-            LoadControllerModels();            
-#endif
+            Start();                         
         }
     }
 
 #if UNITY_EDITOR
     void LoadControllerModels ()
-    {         
+    {           
         System.IO.DirectoryInfo dir = new System.IO.DirectoryInfo(Application.streamingAssetsPath);  
         TraceHelper.Log("looking at " + Application.streamingAssetsPath ); 
         string prefix = "controller_" ; 
@@ -124,82 +124,86 @@ public class ControllerModelProvider
     }
 
 #endif 
+
+
     public void StopListening()
     {
         if (IsListening)
         {
-#if !UNITY_EDITOR
             Stop();
-#endif
         }
     }
 
 
 
     private void Start ()
-    {        
-#if !UNITY_EDITOR && UNITY_WSA && ENABLE_WINMD_SUPPORT
+    {
+#if UNITY_EDITOR && UNITY_WSA 
+        InteractionManager.InteractionSourceDetected += InteractionManager_InteractionSourceDetected;
+        InteractionManager.InteractionSourceLost += InteractionManager_InteractionSourceLost;
+        IsListening = true; 
+
+#elif !UNITY_EDITOR && UNITY_WSA && ENABLE_WINMD_SUPPORT
         TraceHelper.Log("ControllerModelProvider Using WSA");
         UnityEngine.WSA.Application.InvokeOnUIThread(() =>
         {
             var spatialInteractionManager = SpatialInteractionManager.GetForCurrentView();           
             if (spatialInteractionManager != null)
             {
-#if DEBUG
-                var targetTime = DateTimeOffset.Now;
-                var timeStamp = Windows.Perception.PerceptionTimestampHelper.FromHistoricalTargetTime(DateTimeOffset.Now);  
-                var sources = spatialInteractionManager.GetDetectedSourcesAtTimestamp(timeStamp);
-                foreach (var source in sources)
-                {
-                    System.Diagnostics.Debug.WriteLine ("pre-defined source: " + source.Source.Id); 
-                }
-#endif 
-
                 spatialInteractionManager.SourceDetected += SpatialInteractionManager_SourceDetected;
                 spatialInteractionManager.SourceLost += SpatialInteractionManager_SourceLost;
-               
+                IsListening = true ;        
             }
         }, true);
  
 #endif
+    }
+
+
+#if UNITY_EDITOR && UNITY_WSA 
+    private void InteractionManager_InteractionSourceLost(InteractionSourceLostEventArgs args)
+    {
+        OnSourceLost(args.state.source.id); 
+    }
+
+    private void InteractionManager_InteractionSourceDetected(InteractionSourceDetectedEventArgs args )
+    {
+       if ( args.state.source.kind == InteractionSourceKind.Controller )
+        {
+            string productId = MakeProductIdHash(args.state.source);
+            if (!cachedModels.ContainsKey(productId) && !loadingModels.Contains(productId))
+            {
+                loadingModels.Add(productId);
+                IntPtr controllerModel = new IntPtr();
+                uint outputSize = 0;
+                if (TryGetMotionControllerModel(args.state.source.id, out outputSize, out controllerModel))
+                {
+                    byte[] fileBytes;
+                    fileBytes = new byte[Convert.ToInt32(outputSize)];
+                    Marshal.Copy(controllerModel, fileBytes, 0, Convert.ToInt32(outputSize));
+                    AddController(args.state.source.id, productId, fileBytes); 
+                }
+                else
+                {
+#if TRACING_VERBOSE || TRACING_ERROR 
+                    Debug.LogError("Failed to load design-time controller model. This is not expected");                    
+#endif 
+                    loadingModels.Remove(productId); 
+                }
             }
+        }
+    }
 
-   
 
-#if !UNITY_EDITOR && UNITY_WSA && ENABLE_WINMD_SUPPORT
+#elif !UNITY_EDITOR && UNITY_WSA && ENABLE_WINMD_SUPPORT
     private void SpatialInteractionManager_SourceLost(SpatialInteractionManager sender, SpatialInteractionSourceEventArgs args)
     {
-        System.Diagnostics.Debug.WriteLine ("SpatialInteractionManager_SourceLost: " + args.State.Source.Id);  
+        OnSourceLost (args.State.Source.id);  
     }
 
-#endif
-
-    private void Stop()
-    {
-#if !UNITY_EDITOR && UNITY_WSA && ENABLE_WINMD_SUPPORT
-        TraceHelper.Log ("ControllerModelProvider Stopping WSA Event listening");
-        UnityEngine.WSA.Application.InvokeOnUIThread(() =>
-        {
-            var spatialInteractionManager = SpatialInteractionManager.GetForCurrentView();
-            if (spatialInteractionManager != null)
-            {
-                spatialInteractionManager.SourceDetected -= SpatialInteractionManager_SourceDetected;
-                spatialInteractionManager.SourceLost -= SpatialInteractionManager_SourceLost;
-                IsListening = false; 
-            }
-        }, true);
-#endif
-    }
-
-
-#if ENABLE_WINMD_SUPPORT
     private void SpatialInteractionManager_SourceDetected(SpatialInteractionManager sender, SpatialInteractionSourceEventArgs args)
-    {
-       
+    {       
         SpatialInteractionSource source = args.State.Source;
-#if VERBOSE_STATE
-        TraceHelper.LogOnUnityThread ("ControllerModelProvider::SourceDetected: " + args.State.Source.Id );
-#endif 
         if (source.Kind == SpatialInteractionSourceKind.Controller)
         {                         
             SpatialInteractionController controller = source.Controller;
@@ -217,8 +221,7 @@ public class ControllerModelProvider
 
     void LoadOffThread ( uint controllerId , SpatialInteractionController controller , SpatialInteractionSourceHandedness handedness )
     {
-
-#if UNITY_WSA && ENABLE_WINMD_SUPPORT
+ 
      System.Diagnostics.Debug.WriteLine  ("ControllerModelProvider Loading Model");
       System.Threading.Tasks.Task.Run(() =>
       {
@@ -235,15 +238,55 @@ public class ControllerModelProvider
                    reader.ReadBytes(fileBytes);
                    System.Diagnostics.Debug.WriteLine ("LoadOffThread read: " + fileBytes.Length); 
               }
-              AddController(controllerId, controller, fileBytes, handedness ) ;
+              string productId = MakeProductIdHash(controller ,handedness );
+              AddController(controllerId, productId, fileBytes ) ;
+
           } catch  ( System.Exception ex )
           {
               System.Diagnostics.Debug.WriteLine(ex.Message);
               System.Diagnostics.Debug.WriteLine(ex.StackTrace); 
           }
-      });         
+      });          
+    }
+
+#endif
+
+    void OnSourceLost ( uint id  )
+    {
+#if TRACING_VERBOSE
+        Debug.Log("ControllerModelLoader::SourceLost: " + id); 
 #endif
     }
+     
+
+    private void Stop()
+    {
+
+#if UNITY_EDITOR && UNITY_WSA
+        InteractionManager.InteractionSourceDetected -= InteractionManager_InteractionSourceDetected;
+        InteractionManager.InteractionSourceLost -= InteractionManager_InteractionSourceLost;
+        IsListening = false; 
+
+#elif !UNITY_EDITOR && UNITY_WSA && ENABLE_WINMD_SUPPORT
+        TraceHelper.Log ("ControllerModelProvider Stopping WSA Event listening");
+        UnityEngine.WSA.Application.InvokeOnUIThread(() =>
+        {
+            var spatialInteractionManager = SpatialInteractionManager.GetForCurrentView();
+            if (spatialInteractionManager != null)
+            {
+                spatialInteractionManager.SourceDetected -= SpatialInteractionManager_SourceDetected;
+                spatialInteractionManager.SourceLost -= SpatialInteractionManager_SourceLost;
+                IsListening = false; 
+            }
+        }, true);
+#endif
+    }
+
+
+#if ENABLE_WINMD_SUPPORT
+    
+
+    
 
 #endif
 
@@ -373,25 +416,9 @@ public class ControllerModelProvider
         return string.Format("{0}-{1}-{2}-{3}", vendorId , productId, productVersion , source.handedness ).ToLower() ;
     }
 
-#region WINMD 
-
-#if ENABLE_WINMD_SUPPORT
-    public bool Contains (  SpatialInteractionController controller , SpatialInteractionSourceHandedness handedness)
-    {
-        string id = MakeProductIdHash(controller, handedness );
-        return cachedModels.ContainsKey (id); 
-    }
-
-
-    private string MakeProductIdHash ( SpatialInteractionController controller, SpatialInteractionSourceHandedness handedness)
-    {
-        return string.Format("{0}-{1}-{2}-{3}", controller.VendorId, controller.ProductId, controller.Version , handedness ).ToLower(); 
-    }
-
-    void AddController(uint id, SpatialInteractionController controller, byte[] data, SpatialInteractionSourceHandedness handedness)
-    {
-       
-        string productId = MakeProductIdHash(controller, handedness );
+    // void AddController(uint id, SpatialInteractionController controller, byte[] data, SpatialInteractionSourceHandedness handedness)
+    void AddController(uint id, string productId , byte[] data )
+    {         
         if (loadingModels.Contains(productId))
         {
             loadingModels.Remove(productId);
@@ -410,17 +437,6 @@ public class ControllerModelProvider
             activeControllers.Add(id, productId);
         }
 
-#if DEBUG && SAVEMODEL
-        try
-        {
-           SaveModel(productId, data);
-        }
-        catch (System.Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine(ex.Message);
-            System.Diagnostics.Debug.WriteLine(ex.StackTrace);
-        }
-#endif
 
         UnityEngine.WSA.Application.InvokeOnAppThread(() =>
         {
@@ -429,9 +445,24 @@ public class ControllerModelProvider
             if (eh != null)
                 eh(this, new NewControllerModelAvailableEventArgs(id, productId, data));
         }, true);
-
-       
     }
+
+    #region WINMD 
+
+#if ENABLE_WINMD_SUPPORT
+    public bool Contains (  SpatialInteractionController controller , SpatialInteractionSourceHandedness handedness)
+    {
+        string id = MakeProductIdHash(controller, handedness );
+        return cachedModels.ContainsKey (id); 
+    }
+
+
+    private string MakeProductIdHash ( SpatialInteractionController controller, SpatialInteractionSourceHandedness handedness)
+    {
+        return string.Format("{0}-{1}-{2}-{3}", controller.VendorId, controller.ProductId, controller.Version , handedness ).ToLower(); 
+    }
+
+   
 
     private string MakeFileName(string productid)
     {
@@ -488,6 +519,6 @@ public class ControllerModelProvider
 #endif
 
 
-#endregion
+    #endregion
 
 }

@@ -1,4 +1,11 @@
-﻿#define VERBOSE_TRACING  
+﻿#if DEBUG 
+#define TRACING_VERBOSE  
+#define TRACING_ERROR 
+#else 
+#undef TRACING_VERBOSE 
+#undef TRACING_ERROR 
+#endif 
+
 using System;
 using System.Text;
 using UnityEngine;
@@ -152,7 +159,7 @@ namespace WinMRSnippets.Samples.Input
         private static WinMRInputModule instance = null;
         private GameObject currentLookAtHandler;
         private float currentLookAtHandlerClickTime;
-
+        private bool isListening = false; 
         #endregion 
 
         [SerializeField]
@@ -160,10 +167,11 @@ namespace WinMRSnippets.Samples.Input
 
 
         #region MotionController                
-        void ToggleControllerListeners(bool stopListening = false)
+        void StartControllerListeners()
         {
-            if (!stopListening)
+            if (!isListening)
             {
+                isListening = true;
                 if ( AllowMotionControllerForPosition || AllowMotionControllerForSelect )
                 {
                     InteractionManager.InteractionSourceDetected += InteractionManager_InteractionSourceDetected;
@@ -177,16 +185,18 @@ namespace WinMRSnippets.Samples.Input
                         InteractionManager.InteractionSourcePressed += InteractionManager_InteractionSourcePressed;
                         InteractionManager.InteractionSourceReleased += InteractionManager_InteractionSourceReleased;
                     }
-                }                 
-            }
-            else
-            {
-                InteractionManager.InteractionSourceDetected -= InteractionManager_InteractionSourceDetected;
-                InteractionManager.InteractionSourcePressed -= InteractionManager_InteractionSourcePressed;
-                InteractionManager.InteractionSourceUpdated -= InteractionManager_InteractionSourceUpdated;
-                InteractionManager.InteractionSourceReleased -= InteractionManager_InteractionSourceReleased;
-                InteractionManager.InteractionSourceLost -= InteractionManager_InteractionSourceLost;
-            }
+                }                
+            } 
+        }
+
+        void StopControllerEventListeners ()
+        {
+            InteractionManager.InteractionSourceDetected -= InteractionManager_InteractionSourceDetected;
+            InteractionManager.InteractionSourcePressed -= InteractionManager_InteractionSourcePressed;
+            InteractionManager.InteractionSourceUpdated -= InteractionManager_InteractionSourceUpdated;
+            InteractionManager.InteractionSourceReleased -= InteractionManager_InteractionSourceReleased;
+            InteractionManager.InteractionSourceLost -= InteractionManager_InteractionSourceLost;
+            isListening = false; 
         }
 
 
@@ -196,7 +206,7 @@ namespace WinMRSnippets.Samples.Input
             {
                 AddInputSource(args.state.source.id, InputSourceKind.MotionController);
             }
-#if DEBUG 
+#if TRACING_VERBOSE  
             else
                 Debug.Log("Ignoring source: " + args.state.source.kind);
 #endif
@@ -244,7 +254,9 @@ namespace WinMRSnippets.Samples.Input
                     SetActiveInputSource(args.state.source.id, data.Kind);
                     UpdateControllerPosition(data, args.state);
                 }
+#if TRACING_VERBOSE 
                 Debug.Log("Source Pressed: " + args.pressType);
+#endif 
             }
         }
 
@@ -268,7 +280,7 @@ namespace WinMRSnippets.Samples.Input
                 data.IsMotionControllerGraspReleased = args.pressType == InteractionSourcePressType.Grasp;
                 data.IsMotionControllerMenuReleased = args.pressType == InteractionSourcePressType.Menu;
 #endif
-                /// For Release events, we 
+                /// For Release events, we:
                 /// 1) Always handle the event...because this event never fires if Select with Motion Controller is not allowed 
                 /// 2) Set ActiveSource to controller - only if UseMotionControllerForPosition is true  
                 /// 3) Only update position if UseMotionControllerForPosition is true  
@@ -296,7 +308,9 @@ namespace WinMRSnippets.Samples.Input
             if (activeInputId != id)
             {
                 activeInputId = id;
+#if TRACING_VERBOSE 
                 Debug.Log(string.Format ( "**CHANGING INPUT SOURCE to {0} ({1}", id,  kind)) ;
+#endif 
                 InputSource source = null; 
                 if ( _inputSources.TryGetValue(id, out source  ))
                 {
@@ -315,8 +329,7 @@ namespace WinMRSnippets.Samples.Input
         }
 
         private void InteractionManager_InteractionSourceUpdated(InteractionSourceUpdatedEventArgs args)
-        {
-            //   Debug.Log("InputModule::SourceUpdated"); 
+        {             
             InputSource data;
             if (_inputSources.TryGetValue(args.state.source.id, out data))
             {
@@ -407,16 +420,18 @@ namespace WinMRSnippets.Samples.Input
             bool hasPosition = state.sourcePose.TryGetPosition(out position, InteractionSourceNode.Pointer);
             if (hasPosition)
             {
-                data.Position = position;
+                // data.Position = position;
+                data.Position = TranslatePosition(position); 
             }
 
             bool hasForward = state.sourcePose.TryGetForward(out forward, InteractionSourceNode.Pointer);
             if (hasForward)
             {
-                data.ForwardPointer = forward;
+                //    data.ForwardPointer = forward;
+                data.ForwardPointer = TranslateDirection(forward);
             }
 
-#if VERBOSE_TRACING  
+#if TRACING_VERBOSE  
            // Debug.Assert(hasPosition && hasForward, "Expected position and forward");
 #endif 
         }
@@ -448,8 +463,8 @@ namespace WinMRSnippets.Samples.Input
         #region InputModule 
         protected override void Awake()
         {
-#if VERBOSE_TRACING
-            Debug.Log("InputModule::Awake()");
+#if TRACING_VERBOSE
+            Debug.Log("WinMRInputModule::Awake()");
 #endif 
             base.Awake();
             if (instance != null)
@@ -457,18 +472,26 @@ namespace WinMRSnippets.Samples.Input
                 Debug.LogWarning("Trying to instantiate multiple Input Modules is not allowed.");
                 DestroyImmediate(this.gameObject);
             }
-            instance = this;
+            else 
+                instance = this;
             
         }
 
 
         public override void ActivateModule()
         {
-#if VERBOSE_TRACING
+#if TRACING_VERBOSE
             Debug.Log("InputModule::ActivateModule()");
 #endif 
             base.ActivateModule();
-            ToggleControllerListeners(); 
+            StartControllerListeners(); 
+            if ( parentTransform != null )
+            {
+#if TRACING_VERBOSE
+                Debug.Log("Using Parent transform: " + parentTransform.ToString());
+#endif 
+                useParentTransform = true; 
+            }
         }
 
     
@@ -499,7 +522,7 @@ namespace WinMRSnippets.Samples.Input
 
         protected override void Start()
         {
-#if VERBOSE_TRACING
+#if TRACING_VERBOSE
             Debug.Log("InputModule:Start();");
 #endif 
             base.Start();            
@@ -534,7 +557,8 @@ namespace WinMRSnippets.Samples.Input
                 if ( source.pointerEvent!= null  && source.pointerEvent.pointerCurrentRaycast.isValid )
                 {
                     position = source.pointerEvent.pointerCurrentRaycast.worldPosition;
-                    target = source.pointerEvent.pointerCurrentRaycast.gameObject; 
+                    target = source.pointerEvent.pointerCurrentRaycast.gameObject;
+                    TraceHelper.LogDiff(string.Format("Try get cursor returns: {0}", target.name), TraceCacheGrouping.LastPosition); 
                     return true; 
                 }
                 else  
@@ -551,8 +575,7 @@ namespace WinMRSnippets.Samples.Input
                     } 
                 }
                  
-            }
-           
+            }           
             return false; 
         }
 
@@ -568,12 +591,12 @@ namespace WinMRSnippets.Samples.Input
        
         public override void DeactivateModule()
         {
-#if VERBOSE_TRACING
+#if TRACING_VERBOSE
             Debug.Log("InputModule::DeactivateModule()");
 #endif 
             base.DeactivateModule();
             ClearSelection();
-            ToggleControllerListeners();
+            StopControllerEventListeners();
         }
 
 
@@ -601,12 +624,11 @@ namespace WinMRSnippets.Samples.Input
              
             var selectHandlerGO = ExecuteEvents.GetEventHandler<ISelectHandler>(currentOverGo);
             // if we have clicked something new, deselect the old thing
-            // leave 'selection handling' up to the press event though.
-            
+            // leave 'selection handling' up to the press event though.            
             // Selection tracking
             if (selectHandlerGO != eventSystem.currentSelectedGameObject)
             {
-#if VERBOSE_TRACING
+#if TRACING_VERBOSE
                 Debug.Log(string.Format("Changing selection. Current gameobject == is {2}. Going to {0}, from {1}",
                     (selectHandlerGO != null) ? selectHandlerGO.name : "null",
                     (eventSystem.currentSelectedGameObject != null) ? eventSystem.currentSelectedGameObject.name : "null", 
@@ -615,14 +637,6 @@ namespace WinMRSnippets.Samples.Input
 #endif 
                 eventSystem.SetSelectedGameObject(null, pointerEvent);
             }
-#if DEBUG 
-            //else 
-            //Debug.Log(string.Format("Sel process {0}, {1}, {2}", currentOverGo.name,
-            //                 (pointerEvent.selectedObject != null) ? pointerEvent.selectedObject.name : "null",
-            //                 (selectHandlerGO != null) ? selectHandlerGO.name : "null"
-            //         ) );
-#endif 
-
         }
 
 
@@ -723,36 +737,14 @@ namespace WinMRSnippets.Samples.Input
 
         public override void Process()
         {
-
-#if DEBUG && FALSE
-            if ( !eventSystem.isFocused && ShouldIgnoreEventsOnNoFocus ())
-            {
-                return; 
-            }
-
-           //TODO: Implement navigation Events. 
-           if ( eventSystem.sendNavigationEvents )
-            {
-                string NavigationEventsNotSupported = "Navigation Events are not implemented"; 
-                Debug.Assert(false, NavigationEventsNotSupported );
-            
-            }
-#endif
-
-          
-           
-
             InputSource activeSource = null;
             if ( UseMotionControllerForPosition )
             {
                 activeSource = GetActiveMotionController();
             } 
             else
-            {
-
-                #if VERBOSE_TRACING
-                Debug.Assert(UseGazeForPosition, "Expcted UseGazeForPosition to be default/fallback" );
-#endif 
+            {                 
+                Debug.Assert(UseGazeForPosition, "Expected UseGazeForPosition to be default/fallback");
                 activeSource = GetGazeSource();
             } 
                 
@@ -767,8 +759,9 @@ namespace WinMRSnippets.Samples.Input
                 {
                     activeSource.pointerEvent.Reset();
                 }
+
                 activeSource.pointerEvent.delta = Vector2.zero;
-                // TODO: is position needed? if so do we translate to Screen coordinates? 
+                
 
                 if (AllowGamepadControllerForSelect)
                 {
@@ -776,12 +769,7 @@ namespace WinMRSnippets.Samples.Input
                 }
 
                 if (UseMotionControllerForPosition)
-                {
-                    //TODO: Experimental.. 
-                    //Vector3 viewportPoint = Camera.main.WorldToViewportPoint(data.Position); 
-                    //data.pointerEvent.position = new Vector2(UnityEngine.XR.XRSettings.eyeTextureWidth *viewportPoint.x , UnityEngine.XR.XRSettings.eyeTextureHeight *viewportPoint.y );
-                  //  TraceHelper.LogDiff(data.pointerEvent.position.ToString(), TraceCacheGrouping.LastPosition);
-                    //End Experimental 
+                {                     
                     activeSource.pointerEvent.pointerCurrentRaycast = new RaycastResult()
                     {
                         worldPosition = activeSource.Position,
@@ -790,8 +778,7 @@ namespace WinMRSnippets.Samples.Input
                 } 
                 else if ( UseGazeForPosition )
                 {
-                    activeSource.pointerEvent.position = new Vector2(UnityEngine.XR.XRSettings.eyeTextureWidth / 2, UnityEngine.XR.XRSettings.eyeTextureHeight / 2);
-              //      TraceHelper.LogDiff(data.pointerEvent.position.ToString(), TraceCacheGrouping.LastPosition); 
+                    activeSource.pointerEvent.position = new Vector2(UnityEngine.XR.XRSettings.eyeTextureWidth / 2, UnityEngine.XR.XRSettings.eyeTextureHeight / 2);               
                     activeSource.pointerEvent.pointerCurrentRaycast = new RaycastResult()
                     {
                         worldPosition = Camera.main.transform.position,
@@ -802,19 +789,14 @@ namespace WinMRSnippets.Samples.Input
                 // trigger a raycast
                 ProcessRaycast(activeSource);
 
-                //TraceHelper.LogDiff(data.pointerEvent.ToString() + " " + (data.IsMotionControllerSelectPressed ? "down" : "") + (data.IsMotionControllerSelectReleased ? "up" : "")
-                //    , TraceCacheGrouping.TrackingState);
-
+               
                 GameObject currentTargetGO = null;
-                if (activeSource.pointerEvent != null && activeSource.pointerEvent.pointerCurrentRaycast.isValid)
+                if ( activeSource.pointerEvent.pointerCurrentRaycast.isValid)
                     currentTargetGO = activeSource.pointerEvent.pointerCurrentRaycast.gameObject;
 
                 // Handle enter and exit events on the GUI controlls that are hit
                 base.HandlePointerExitAndEnter(activeSource.pointerEvent, currentTargetGO);
                  
-
-
-
                 bool firedOnGaze; 
                 if ( UseGazeForSelect )
                 {
@@ -822,10 +804,11 @@ namespace WinMRSnippets.Samples.Input
                 }
                 else if (activeSource.IsSelectPressed && currentTargetGO != null)
                 {
-                     DeselectIfSelectionChanged(currentTargetGO, activeSource.pointerEvent);
+                    DeselectIfSelectionChanged(currentTargetGO, activeSource.pointerEvent);
                     if ((Time.unscaledTime - activeSource.pointerEvent.clickTime) > MinimumTimeBetweenClicksAcrossAll)
                     {
                         activeSource.pointerEvent.current = currentTargetGO;
+                        activeSource.pointerEvent.rawPointerPress = currentTargetGO; 
                         GameObject newPressed = ExecuteEvents.ExecuteHierarchy(currentTargetGO, activeSource.pointerEvent, ExecuteEvents.pointerDownHandler);
                         bool needsToFireClick = true;
                         if (newPressed == null)
@@ -839,32 +822,33 @@ namespace WinMRSnippets.Samples.Input
                         else
                         {
                             activeSource.pointerEvent.pointerPress = newPressed;
-                            if (activeSource.pointerEvent.pointerPress == activeSource.pointerEvent.lastPress) // Same button, but maybe different time, two presses
+                            // Same button, but maybe different time, possibly two presses it enough time between click
+                            if (activeSource.pointerEvent.pointerPress == activeSource.pointerEvent.lastPress) 
                             {
                                 if ((Time.unscaledTime - activeSource.pointerEvent.clickTime) < MinimumTimeBetweenClicksSameControl)
                                 {
                                     needsToFireClick = false;
                                     activeSource.pointerEvent.clickCount++;
-#if VERBOSE_TRACING
-                                    Debug.Log("Same control debounce");
+#if TRACING_VERBOSE
+                                    Debug.Log("Same control debounce at " + activeSource.pointerEvent.pointerPress.name );
 #endif 
                                 }
-                                // no else because we fall back to firing as a new event (via needsToFire == true ) 
+                                // no else because we fall back to firing as a new event (via needsToFireClick == true ) 
                             }
 
                             if (needsToFireClick)
                             {
                                 activeSource.pointerEvent.clickTime = Time.unscaledTime;
                                 activeSource.pointerEvent.clickCount = 1;
-#if VERBOSE_TRACING
+#if TRACING_VERBOSE
                                 Debug.Log("Firing Click for " + newPressed.name);
 #endif 
                                 ExecuteEvents.Execute(newPressed, activeSource.pointerEvent, ExecuteEvents.pointerClickHandler);
                             }
                         }
                     }
-                    
-#if DEBUG
+
+#if TRACING_VERBOSE
                     else
                     {
                         //  Debug.Log("Skipped click due to hardware debounce" + currentTargetGO.name); 
@@ -873,7 +857,7 @@ namespace WinMRSnippets.Samples.Input
                 }
                 else if ( currentTargetGO == null && eventSystem.currentSelectedGameObject)
                 {
-#if VERBOSE_TRACING
+#if TRACING_VERBOSE
                     Debug.Log("***Clearing selection***");
 #endif 
                     DeselectIfSelectionChanged(currentTargetGO, activeSource.pointerEvent);
@@ -883,7 +867,7 @@ namespace WinMRSnippets.Samples.Input
                 {
                     if (activeSource.pointerEvent.pointerPress != null) /// data.pointerEvent.pointerPress 
                     {
-#if VERBOSE_TRACING
+#if TRACING_VERBOSE
                         Debug.Log("Pointer Up" + activeSource.pointerEvent.pointerPress.name);
 #endif 
                         ExecuteEvents.Execute(activeSource.pointerEvent.pointerPress, activeSource.pointerEvent, ExecuteEvents.pointerUpHandler);
@@ -910,7 +894,7 @@ namespace WinMRSnippets.Samples.Input
             {
                 source.IsGamepadControllerAPressed = UnityEngine.Input.GetButtonDown(UnityInputAxis.XboxController_AButton);
 
-#if VERBOSE_TRACING
+#if TRACING_VERBOSE
                 if ( source.IsGamepadControllerAPressed)
                 {
                     Debug.Log("Game Pad A pressed => Select"); 
@@ -968,14 +952,14 @@ namespace WinMRSnippets.Samples.Input
 
         }
 
-        public void SetPosition ( uint id,  Vector3 position  )
-        {
-            InputSource controllerData = null; 
-            if ( _inputSources.TryGetValue(id, out controllerData ))
-            {
-                controllerData.Position = position;  
-            }
-        }
+        //public void SetPosition ( uint id,  Vector3 position  )
+        //{
+        //    InputSource controllerData = null; 
+        //    if ( _inputSources.TryGetValue(id, out controllerData ))
+        //    {
+        //        controllerData.Position = position;  
+        //    }
+        //}
 
         public void SetButtonStates ( uint id, bool isTriggerPressed, bool isGrasped , bool isMenuPressed )
         {
@@ -1009,8 +993,43 @@ namespace WinMRSnippets.Samples.Input
             }
         }
 
-        #endregion 
+        #endregion
 
+
+
+        #region Experimental 
+        public Transform parentTransform;
+        bool useParentTransform = false;         
+        public void SetParentTransform ( Transform parent )
+        {
+            parentTransform = parent;
+            useParentTransform = true;  
+        }
+
+        Vector3 TranslatePosition ( Vector3 rawPosition )
+        {
+ 
+            if (useParentTransform)
+            {
+                Debug.Assert(parentTransform != null); 
+                Vector3 offsetPosition = rawPosition + parentTransform.position; 
+                return offsetPosition ; 
+            }
+            else
+                return rawPosition; 
+        }
+
+        Vector3 TranslateDirection  ( Vector3 rawForwardDirection )
+        {
+            // we do nothing to the direction 
+            // return rawForwardDirection;
+            if (useParentTransform)
+                return parentTransform.TransformDirection(rawForwardDirection);
+            else
+                return rawForwardDirection; 
+        }
+          
+        #endregion 
 
 #if !SKIPTROUBLESHOOTINGCODE
         void DoRandomHitTesting( WinMREventData data )
@@ -1065,9 +1084,6 @@ namespace WinMRSnippets.Samples.Input
                 Debug.Log(states);
         }
 #endif
-
-
- 
     }
 
     internal static class Helper
@@ -1075,9 +1091,7 @@ namespace WinMRSnippets.Samples.Input
         public static string GetName (GameObject go)
         {
             return ( go == null ) ? "null" : go.name  ;  
-        }
-
-    
+        }    
     }
 
 }

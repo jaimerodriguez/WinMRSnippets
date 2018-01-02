@@ -62,10 +62,13 @@ namespace HoloToolkit.Unity.InputModule
             if (ShowDebugAxis)
             {
                 TraceHelper.LogOnUnityThread("Attaching Debug Axis to " + source.handedness);
+                AxisRenderer axisRenderer = null;
                 if (source.handedness == InteractionSourceHandedness.Left)
-                    axisRendererLeft = target.AddComponent<AxisRenderer>();
+                    axisRenderer= axisRendererLeft = target.AddComponent<AxisRenderer>();
                 else
-                    axisRendererRight = target.AddComponent<AxisRenderer>();
+                    axisRenderer= axisRendererRight = target.AddComponent<AxisRenderer>();
+
+              //   axisRenderer.SetParent(this.transform.parent); 
             }
 
 #if SKIPNPUTMODULE 
@@ -124,9 +127,9 @@ namespace HoloToolkit.Unity.InputModule
                 if (axis != null)
                 {
                     if ( hasPointerPosition && hasPointerRotation )
-                        axis.SetValues(pointerPosition, pointerForward * 2, pointerRotation, AxisRenderer.ControllerElement.Pointer);
+                        axis.SetWorldValues(pointerPosition, pointerForward , pointerRotation, AxisRenderer.ControllerElement.Pointer);
                     if (hasGripPosition && hasGripRotation )
-                        axis.SetValues(gripPosition, gripForward * 2, gripRotation, AxisRenderer.ControllerElement.Grip);
+                        axis.SetWorldValues(gripPosition, gripForward , gripRotation, AxisRenderer.ControllerElement.Grip);
                 }
             }
 #if DEBUG
@@ -144,6 +147,44 @@ namespace HoloToolkit.Unity.InputModule
                     state.selectPressed, state.grasped, state.menuPressed ); 
 #endif 
         }
+
+
+        LineRenderer pointer = null; 
+        public void DrawPointer ( InteractionSourceState state )
+        {
+            return; 
+
+            if ( pointer == null )
+            {
+                pointer = this.gameObject.AddComponent<LineRenderer>();
+                pointer.useWorldSpace = false ;
+                 
+                pointer.positionCount = 2;
+                var material = Resources.Load<UnityEngine.Material>("AxisRendererMaterial");
+                if (material != null)
+                {
+                    pointer.material = material;
+                }
+                float RayWidth = 0.025f; 
+                pointer.startWidth = RayWidth;
+                pointer.endWidth = RayWidth;
+             }
+
+            Vector3 pointerPosition = Vector3.zero;
+            Vector3 pointerForward = Vector3.forward;
+
+            if ( 
+                state.sourcePose.TryGetPosition(out pointerPosition, InteractionSourceNode.Pointer)  && 
+                state.sourcePose.TryGetForward( out pointerForward, InteractionSourceNode.Pointer) 
+                )
+            {
+                pointer.SetPosition(0, pointerPosition);
+                pointer.SetPosition(1, pointerPosition + pointerForward * 2 );
+            }
+
+            
+
+        }
     }
 
 
@@ -155,10 +196,22 @@ namespace HoloToolkit.Unity.InputModule
         {
             Vector3 newPosition;
             bool retValPosition = false , retValRotation = false ;
-            if ( updatePosition && (retValPosition = sourceState.sourcePose.TryGetPosition(out newPosition, nodeType)))
+            if (updatePosition && (retValPosition = sourceState.sourcePose.TryGetPosition(out newPosition, nodeType)))
             {
-                currentController.ControllerParent.transform.localPosition = newPosition;
-            }
+#if DEBUG
+                if (newPosition.IsDebugValid())
+#endif
+                {
+
+                    currentController.ControllerParent.transform.localPosition = newPosition;
+                }
+#if DEBUG
+                else
+                {
+                    Debug.Log("Skipping newPosition:" + newPosition.ToString());
+                } 
+#endif  
+            } 
             Quaternion newRotation;
             if (updateRotation && (retValRotation = sourceState.sourcePose.TryGetRotation(out newRotation, nodeType))) 
             {

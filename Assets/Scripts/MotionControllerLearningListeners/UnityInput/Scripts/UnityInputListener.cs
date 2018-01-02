@@ -138,13 +138,13 @@ public class UnityInputListener : MonoBehaviour {
                 axis = (nodeType == XRNode.RightHand) ? axisRendererRight : axisRendererLeft;
                 if (axis != null)
                 {                   
-                    axis.SetValues(position, 2f* (rotation * Vector3.forward), rotation, AxisRenderer.ControllerElement.Grip);
+                    axis.SetWorldValues(position,  (rotation * Vector3.forward), rotation, AxisRenderer.ControllerElement.Grip);
                 } 
 
                 if (axis != null)
                 {
                     position.y += .05f; 
-                    axis.SetValues(position,  angles *2f, rotation, AxisRenderer.ControllerElement.Pointer );
+                    axis.SetWorldValues(position, angles, rotation, AxisRenderer.ControllerElement.Pointer );
                 }
             } 
 
