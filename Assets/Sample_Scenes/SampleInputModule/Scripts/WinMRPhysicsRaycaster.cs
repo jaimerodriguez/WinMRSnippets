@@ -76,6 +76,8 @@ namespace WinMRSnippets.Samples.Input
                 hitDistance = eventCamera.farClipPlane;
 
 
+            Debug.DrawRay(eventData.pointerCurrentRaycast.worldPosition, eventData.pointerCurrentRaycast.worldNormal, Color.green); 
+
             Ray ray = new Ray(eventData.pointerCurrentRaycast.worldPosition, eventData.pointerCurrentRaycast.worldNormal);
            
             var hits = Physics.RaycastAll(ray, hitDistance, finalEventMask);

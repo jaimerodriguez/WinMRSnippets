@@ -1,4 +1,5 @@
 ﻿#define EXTEND_TOOLKIT_MOTION_CONTROLLER 
+#define EXPERIMENTING_PARENTINIT 
 
 using System.Collections;
 using System.Collections.Generic;
@@ -54,7 +55,7 @@ namespace HoloToolkit.Unity.InputModule
         }
 
         private IEnumerator Attach(GameObject target, Transform parent, InteractionSource source)
-        {
+        {            
             yield return ControllerHelpers.AttachModel(target, parent, source, GLTFMaterial, GLTFMaterial);
             inProgressSources.Remove(source.id);
             FinishControllerSetup(target, source.handedness.ToString(), source.id);
@@ -62,16 +63,28 @@ namespace HoloToolkit.Unity.InputModule
             if (ShowDebugAxis)
             {
                 TraceHelper.LogOnUnityThread("Attaching Debug Axis to " + source.handedness);
+                Debug.Log(string.Format("Attaching axis renderer. Target:{0} parent:{1}",
+                        target.name, parent.gameObject.name));
+
+#if EXPERIMENTING_PARENTINIT
+                target.SetActive(false); 
                 AxisRenderer axisRenderer = null;
                 if (source.handedness == InteractionSourceHandedness.Left)
                     axisRenderer= axisRendererLeft = target.AddComponent<AxisRenderer>();
                 else
                     axisRenderer= axisRendererRight = target.AddComponent<AxisRenderer>();
-
-              //   axisRenderer.SetParent(this.transform.parent); 
+                axisRenderer.Init(false, parent); 
+                target.SetActive(true);
+#else //ORIGINAL                   
+                 AxisRenderer axisRenderer = null;
+                if (source.handedness == InteractionSourceHandedness.Left)
+                    axisRenderer= axisRendererLeft = target.AddComponent<AxisRenderer>();
+                else
+                    axisRenderer= axisRendererRight = target.AddComponent<AxisRenderer>();
+#endif
             }
 
-#if SKIPNPUTMODULE 
+#if SKIPNPUTMODULE
             WinMRSnippets.Samples.Input.MotionControllerInputModule.Instance.AddController(source.id );
             WinMRSnippets.Samples.Input.MotionControllerInputModule.Instance.AddController(source.id);
 #endif
@@ -107,13 +120,13 @@ namespace HoloToolkit.Unity.InputModule
                  (hasGripPosition = state.sourcePose.TryGetPosition(out gripPosition, InteractionSourceNode.Grip)) &&                 
                  (hasGripRotation = state.sourcePose.TryGetRotation(out gripRotation, InteractionSourceNode.Grip)) 
                 
-#else  
+#else
 
                  (hasPointerPosition = hasPointerForward = state.sourcePose.TryGetPointerRay(out pointerRay )) &&                  
                  //(hasGripForward = state.sourcePose.TryGetForward(out gripForward )) &&
                  (hasGripPosition = state.sourcePose.TryGetPosition(out gripPosition )) &&                 
                  (hasGripRotation = state.sourcePose.TryGetRotation(out gripRotation ))
-#endif           
+#endif
                  )
              {
 #if UNITY_5
@@ -122,7 +135,7 @@ namespace HoloToolkit.Unity.InputModule
                     pointerPosition = pointerRay.origin;
                     pointerForward = pointerRay.direction;
                 } 
-#endif 
+#endif
                 AxisRenderer axis = (state.IsLeftHand() ? axisRendererLeft : axisRendererRight);
                 if (axis != null)
                 {
@@ -140,12 +153,12 @@ namespace HoloToolkit.Unity.InputModule
             //                     hasPointerPosition && hasGripRotation && hasPointerRotation, "Show debug axis should not fail");
 
 
-#if SKIPNPUTMODULE 
+#if SKIPNPUTMODULE
             WinMRSnippets.Samples.Input.MotionControllerInputModule.Instance.SetPosition( state.source.id, pointerPosition);
             WinMRSnippets.Samples.Input.MotionControllerInputModule.Instance.SetForwardPointer (state.source.id, pointerForward);
             WinMRSnippets.Samples.Input.MotionControllerInputModule.Instance.SetButtonStates(state.source.id,
                     state.selectPressed, state.grasped, state.menuPressed ); 
-#endif 
+#endif
         }
 
 
@@ -210,7 +223,7 @@ namespace HoloToolkit.Unity.InputModule
                 {
                     Debug.Log("Skipping newPosition:" + newPosition.ToString());
                 } 
-#endif  
+#endif
             } 
             Quaternion newRotation;
             if (updateRotation && (retValRotation = sourceState.sourcePose.TryGetRotation(out newRotation, nodeType))) 

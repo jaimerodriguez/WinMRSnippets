@@ -6,6 +6,9 @@
 #undef TRACING_ERROR 
 #endif 
 
+#define EXPERIMENTING_PARENTINIT 
+
+
 using System;
 using System.Text;
 using UnityEngine;
@@ -418,21 +421,14 @@ namespace WinMRSnippets.Samples.Input
         {
             Vector3 position, forward; 
             bool hasPosition = state.sourcePose.TryGetPosition(out position, InteractionSourceNode.Pointer);
-            if (hasPosition)
-            {
-                // data.Position = position;
-                data.Position = TranslatePosition(position); 
-            }
-
             bool hasForward = state.sourcePose.TryGetForward(out forward, InteractionSourceNode.Pointer);
-            if (hasForward)
-            {
-                //    data.ForwardPointer = forward;
-                data.ForwardPointer = TranslateDirection(forward);
-            }
 
+            if (hasPosition && hasForward )
+            {
+                TranslateToParent(ref data, position, forward);  
+            }             
 #if TRACING_VERBOSE  
-           // Debug.Assert(hasPosition && hasForward, "Expected position and forward");
+           Debug.Assert(hasPosition && hasForward, "Expected position and forward");
 #endif 
         }
 
@@ -490,7 +486,7 @@ namespace WinMRSnippets.Samples.Input
 #if TRACING_VERBOSE
                 Debug.Log("Using Parent transform: " + parentTransform.ToString());
 #endif 
-                useParentTransform = true; 
+                useParentTransform = true ; 
             }
         }
 
@@ -1006,30 +1002,65 @@ namespace WinMRSnippets.Samples.Input
             useParentTransform = true;  
         }
 
-        Vector3 TranslatePosition ( Vector3 rawPosition )
+
+        void TranslateToParent(ref InputSource data,  Vector3 position, Vector3 forward)
         {
- 
-            if (useParentTransform)
+            if ( useParentTransform )
             {
-                Debug.Assert(parentTransform != null); 
-                Vector3 offsetPosition = rawPosition + parentTransform.position; 
-                return offsetPosition ; 
+#if EXPERIMENTING_PARENTINIT
+                //This works on basic 0.1 offset scenario.. 
+                //Vector3 transformedPosition = position + parentTransform.position ;
+                //Vector3 transformedForward = forward;
+
+                Vector3 transformedPosition = parentTransform.TransformPoint(position);
+                Vector3 transformedForward = parentTransform.TransformDirection(forward);
+
+                //Quite far .. 
+                //Vector3 transformedPosition = parentTransform.InverseTransformPoint(position);
+                //Vector3 transformedForward = parentTransform.InverseTransformPoint(forward);
+
+
+                //Quite far at 0.1 
+                //Vector3 transformedPosition = parentTransform.position + position;
+                //Vector3 transformedForward = parentTransform.position + forward;
+
+                //feels same as above
+                //Vector3 transformedPosition = parentTransform.TransformPoint(parentTransform.InverseTransformPoint(position));
+                //Vector3 transformedForward = parentTransform.TransformDirection(parentTransform.InverseTransformDirection(forward));
+
+                //some offset but not exact 
+                //Vector3 transformedPosition = position  + parentTransform.position;
+                //Vector3 transformedForward = forward;
+
+
+                //Vector3 transformedPosition = parentTransform.TransformPoint(position);
+                //Vector3 transformedForward = parentTransform.TransformDirection(forward);
+
+                //Vector3 transformedPosition = this.transform.InverseTransformPoint(parentTransform.TransformPoint(position));
+                //Vector3 transformedForward = this.transform.InverseTransformDirection(parentTransform.TransformDirection(forward));
+
+
+                TraceHelper.LogDiff(string.Format("parent:{4}, module:{5}, pos:{0}->{1},for:{2}->{3}",
+                    position, transformedPosition, forward, transformedForward,
+                    parentTransform.localPosition, this.transform.localPosition ), TraceCacheGrouping.ForwardPosition 
+                    ); 
+
+                data.Position = transformedPosition;
+                data.ForwardPointer = transformedForward;
+
+#else
+                data.Position = position;
+                data.ForwardPointer = forward;
+#endif
             }
             else
-                return rawPosition; 
-        }
-
-        Vector3 TranslateDirection  ( Vector3 rawForwardDirection )
-        {
-            // we do nothing to the direction 
-            // return rawForwardDirection;
-            if (useParentTransform)
-                return parentTransform.TransformDirection(rawForwardDirection);
-            else
-                return rawForwardDirection; 
+            {
+                data.Position = position;
+                data.ForwardPointer = forward; 
+            }
         }
           
-        #endregion 
+#endregion
 
 #if !SKIPTROUBLESHOOTINGCODE
         void DoRandomHitTesting( WinMREventData data )

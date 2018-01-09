@@ -1,5 +1,10 @@
-﻿#define EXPERIMENTING 
+﻿// #define EXPERIMENTING
 
+// #define EXPERIMENTING_LOCALLY 
+#define EXPERIMENTING_PARENTINIT 
+
+
+// #define EXPERIMENTING_ALIGNMENT 
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -11,18 +16,20 @@ public class AxisRenderer : MonoBehaviour {
     GameObject gripObject, pointerObject;
     Vector3 pointerPosition, pointerForward, gripPosition, gripForward;
     Quaternion pointerRotation, gripRotation;
+    
+    float AxisLengthScaleFactor = 4.0f; 
+    float scale = .05f ;
+    Vector3 scaleVector = Vector3.one; 
+    float ElementScale = 0.05f;
+    string LineShaderName = "Standard";
+    string ElementShaderName = "Standard";
+    Color[] Colors = new Color[] { Color.red, Color.yellow };
+    float RayWidth = .01f;
+    Material material;
+    bool UseParentTransform = false ;     
+    bool UseWorldSpace = true ;
+    bool AllowParentTransform = true; 
 
-    public float NodeScale = 0.02f;
-    public float AxisLengthScaleFactor = 4.0f; 
-    public Vector3 Scale = new Vector3(0.05f, 0.05f, 0.05f ); 
-    public float ElementScale = 0.05f;
-    public string LineShaderName = "Standard";
-    public string ElementShaderName = "Standard";
-    public Color[] Colors = new Color[] { Color.red, Color.yellow };
-    public float RayWidth = .01f;
-    public Material material;
-    private bool UseParentTransform = true ;     
-    public bool UseWorldSpace = false ;
     Transform parentTransform = null; 
 
     bool ValidatesConfiguration ()
@@ -38,6 +45,22 @@ public class AxisRenderer : MonoBehaviour {
         }
         return isValid; 
     }
+
+    public void Init(bool useWorldSpace, Transform parent)
+    {
+        if (AllowParentTransform)
+        {
+            this.UseWorldSpace = useWorldSpace ;
+            if (!UseWorldSpace)
+            {
+                Debug.Assert(parent != null); 
+                parentTransform = parent;
+                UseParentTransform = true; 
+            } 
+        } 
+    }
+
+
     // Use this for initialization
     void Start() {
         if ( !ValidatesConfiguration())
@@ -46,6 +69,8 @@ public class AxisRenderer : MonoBehaviour {
             Destroy(this); 
         }
 
+        UseParentTransform = UseParentTransform && AllowParentTransform; 
+
         if (gripObject == null)
         {
             gripObject = GameObject.CreatePrimitive(PrimitiveType.Sphere);
@@ -53,19 +78,53 @@ public class AxisRenderer : MonoBehaviour {
             pointerRay = pointerObject.AddComponent<LineRenderer>();            
             gripRay = gripObject.AddComponent<LineRenderer>();
 
+#if EXPERIMENTING_PARENTINIT
+            if ( !UseWorldSpace ) 
+            {
+                Debug.Assert(parentTransform != null,  "You must call Init if not using WordlSace" );
+                gripObject.transform.SetParent(parentTransform);
+                pointerObject.transform.SetParent(parentTransform);
+            }                    
+#elif EXPERIMENTING
             if (!UseWorldSpace)
             {                                
                 if ( this.transform.parent != null && 
                      this.transform.parent.transform.parent != null )
                 {
-                    parentTransform = this.transform.parent.transform.parent.transform; 
+                    parentTransform = this.transform.parent.transform.parent.transform;
+                    Debug.Log("Axis Renderer Parent: " + parentTransform.gameObject.name); 
                 }
+
                 if ( parentTransform != null )
                 {
                     gripObject.transform.SetParent(parentTransform);
                     pointerObject.transform.SetParent(parentTransform); 
                 }
             } 
+#elif EXPERIMENTING_LOCALLY
+            if (!UseWorldSpace)
+            {
+                parentTransform = this.transform; 
+                if (parentTransform != null)
+                {
+                    gripObject.transform.SetParent(parentTransform);
+                    pointerObject.transform.SetParent(parentTransform);
+                }
+            }
+
+#else //ORIGINAL 
+if (!UseWorldSpace)
+            {
+                parentTransform = this.transform; 
+                if (parentTransform != null)
+                {
+                    gripObject.transform.SetParent(parentTransform);
+                    pointerObject.transform.SetParent(parentTransform);
+                }
+            }
+
+#endif
+
         }
 
         LineRenderer[] lines = new LineRenderer[] { pointerRay, gripRay };
@@ -90,6 +149,8 @@ public class AxisRenderer : MonoBehaviour {
             renderer.material.color = Colors[index++ % Colors.Length];
             renderer.startWidth = RayWidth;
             renderer.endWidth = RayWidth;
+
+ 
         }
 
         GameObject[] nodes = new GameObject[] { pointerObject, gripObject };
@@ -111,7 +172,17 @@ public class AxisRenderer : MonoBehaviour {
                 material = new Material(elementShader);
                 node.GetComponent<Renderer>().material = material;
             }
-            node.transform.localScale = Scale; 
+
+#if EXPERIMENTING_PARENTINIT
+            if (parentTransform != null)
+            {
+                node.transform.localScale = scale * new Vector3(1 / parentTransform.localScale.x, 1 / parentTransform.localScale.y, 1 / parentTransform.localScale.z);
+            }
+            else
+                node.transform.localScale = new Vector3(scale, scale, scale); 
+#else
+            node.transform.localScale = new Vector3(scale, scale, scale); 
+#endif
             node.GetComponent<Renderer>().material.color = Colors[index++ % Colors.Length];
         }
     }     
@@ -237,7 +308,7 @@ public class AxisRenderer : MonoBehaviour {
 
 */
 
-#if USEINLISTENERS  
+#if USEINLISTENERS
     void Update()
     {
         Vector3 transformedGripPosition, transformedPointerPosition;
@@ -276,7 +347,9 @@ public class AxisRenderer : MonoBehaviour {
     void Update()
     {
         if (UseWorldSpace)
+        {
             UpdateUsingWorldSpace();
+        } 
         else if (UseParentTransform)
             UpdateUsingParentTransform(); 
     }
@@ -297,9 +370,102 @@ public class AxisRenderer : MonoBehaviour {
 
     void UpdateUsingParentTransform ()
     {
+#if EXPERIMENTING
+        //Quaternion before = pointerRotation;
+        //Quaternion after = pointerRotation * Quaternion.Inverse(parentTransform.rotation); 
+        //pointerObject.transform.localRotation = after ;
+        //gripObject.transform.localRotation = gripRotation * parentTransform.rotation;
+        //Debug.Log(string.Format( "Experimenting -- before:{0}, after{1} ", before.eulerAngles, after.eulerAngles ));
+
+        //Quaternion before = pointerRotation;
+        //Quaternion after = pointerRotation * Quaternion.Inverse(parentTransform.rotation);
+        //pointerObject.transform.rotation = before;
+        //gripObject.transform.rotation = gripRotation ;
+         
+
+        gripObject.transform.localPosition = gripPosition;
+        pointerObject.transform.localPosition = pointerPosition;
 
 
-#if !EXPERIMENTING
+        gripRay.useWorldSpace = false ;
+        pointerRay.useWorldSpace = false;
+
+        Vector3 transformedGripRoot = gripObject.transform.InverseTransformPoint(gripPosition);
+        Vector3 transformedPointerRoot = pointerObject.transform.InverseTransformPoint(pointerPosition);
+
+        Vector3 transformedGripForward = gripObject.transform.InverseTransformPoint(gripPosition + gripForward);
+        transformedGripForward -= transformedGripRoot;
+         
+        Vector3 transformedPointerForward = pointerObject.transform.InverseTransformPoint(pointerPosition + pointerForward);       
+        transformedPointerForward -= transformedPointerRoot;
+         
+        gripRay.SetPosition(0, Vector3.zero  );        
+        gripRay.SetPosition(1, transformedGripForward );
+        pointerRay.SetPosition(0, Vector3.zero);
+        pointerRay.SetPosition(1, transformedPointerForward );
+
+#elif EXPERIMENTING_LOCALLY
+
+        Vector3 worldGrip = parentTransform.InverseTransformPoint(gripPosition);
+        gripObject.transform.localPosition = gripObject.transform.TransformPoint(worldGrip);
+
+        pointerObject.transform.localPosition = parentTransform.InverseTransformPoint(pointerPosition); 
+        
+        gripRay.useWorldSpace = false;
+        pointerRay.useWorldSpace = false;
+
+        Vector3 transformedGripRoot = gripObject.transform.InverseTransformPoint(gripPosition);
+        Vector3 transformedPointerRoot = pointerObject.transform.InverseTransformPoint(pointerPosition);
+
+        Vector3 transformedGripForward = gripObject.transform.InverseTransformPoint(gripPosition + gripForward);
+        transformedGripForward -= transformedGripRoot;
+
+        Vector3 transformedPointerForward = pointerObject.transform.InverseTransformPoint(pointerPosition + pointerForward);
+        transformedPointerForward -= transformedPointerRoot;
+
+        gripRay.SetPosition(0, Vector3.zero);
+        gripRay.SetPosition(1, transformedGripForward);
+        pointerRay.SetPosition(0, Vector3.zero);
+        pointerRay.SetPosition(1, transformedPointerForward);
+
+#elif EXPERIMENTING_PARENTINIT
+
+        if ( gripPosition != Vector3.zero )
+        {
+            bool isDebugging = false; 
+            if ( isDebugging )
+                Debug.Log("Stop"); 
+        }
+        gripObject.transform.localPosition = gripPosition;
+        pointerObject.transform.localPosition = pointerPosition;
+        pointerObject.transform.localRotation = pointerRotation * parentTransform.rotation;
+        gripObject.transform.localRotation = gripRotation * parentTransform.rotation;
+
+
+        // WORLDS 
+        //gripRay.SetPosition(0, gripPosition);
+        //gripRay.SetPosition(1, gripPosition + gripForward);
+        //pointerRay.SetPosition(0, pointerPosition);
+        //pointerRay.SetPosition(1, pointerPosition + pointerForward);
+
+        gripRay.useWorldSpace = false;         
+        Vector3 transformedGripRoot = gripObject.transform.InverseTransformPoint(parentTransform.TransformPoint(gripPosition)); 
+        Vector3 transformedGripForward = gripObject.transform.InverseTransformPoint(parentTransform.TransformPoint(gripPosition+gripForward));
+
+        gripRay.SetPosition(0, transformedGripRoot);
+        gripRay.SetPosition(1, transformedGripForward);
+
+        Vector3 transformedPointerRoot = pointerObject.transform.InverseTransformPoint(parentTransform.TransformPoint(pointerPosition));
+        Vector3 transformedPointerForward = pointerObject.transform.InverseTransformPoint(parentTransform.TransformPoint(pointerPosition + pointerForward));
+
+        pointerRay.SetPosition(0, transformedPointerRoot);
+        pointerRay.SetPosition(1, transformedPointerForward);
+
+
+
+
+#else //ORIGINAL 
+
         gripObject.transform.localPosition = gripPosition;
         pointerObject.transform.localPosition = pointerPosition;
         pointerObject.transform.localRotation = pointerRotation ;
@@ -319,47 +485,8 @@ public class AxisRenderer : MonoBehaviour {
         gripRay.SetPosition(1, transformedGripForward );
         pointerRay.SetPosition(0, Vector3.zero);
         pointerRay.SetPosition(1, transformedPointerForward );
-#else
-        //Quaternion before = pointerRotation;
-        //Quaternion after = pointerRotation * Quaternion.Inverse(parentTransform.rotation); 
-        //pointerObject.transform.localRotation = after ;
-        //gripObject.transform.localRotation = gripRotation * parentTransform.rotation;
-        //Debug.Log(string.Format( "Experimenting -- before:{0}, after{1} ", before.eulerAngles, after.eulerAngles ));
 
-        //Quaternion before = pointerRotation;
-        //Quaternion after = pointerRotation * Quaternion.Inverse(parentTransform.rotation);
-        //pointerObject.transform.rotation = before;
-        //gripObject.transform.rotation = gripRotation ;
-         
-
-         gripObject.transform.localPosition = gripPosition;
-        pointerObject.transform.localPosition = pointerPosition;
-
-
-        gripRay.useWorldSpace = false ;
-        pointerRay.useWorldSpace = false ;
-        Vector3 transformedGripRoot = gripObject.transform.InverseTransformPoint(gripPosition);
-        Vector3 transformedPointerRoot = pointerObject.transform.InverseTransformPoint(pointerPosition);
-
-        //  Vector3 transformedGripForward = transformedGripRoot + gripForward;
-        // Vector3 transformedGripForward = pointerObject.transform.InverseTransformPoint(gripForward);
-
-        Vector3 transformedGripForward = gripObject.transform.InverseTransformPoint(gripPosition + gripForward);
-        transformedGripForward -= transformedGripRoot;
-
-
-
-
-        Vector3 transformedPointerForward = pointerObject.transform.InverseTransformPoint(pointerPosition + pointerForward);       
-        transformedPointerForward -= transformedPointerRoot;
-
-       
-        gripRay.SetPosition(0, Vector3.zero  );        
-        gripRay.SetPosition(1, transformedGripForward );
-        pointerRay.SetPosition(0, Vector3.zero);
-        pointerRay.SetPosition(1, transformedPointerForward );
 #endif
-
     }
 #endif
 
