@@ -6,9 +6,6 @@
 #undef TRACING_ERROR 
 #endif 
 
-#define EXPERIMENTING_PARENTINIT 
-
-
 using System;
 using System.Text;
 using UnityEngine;
@@ -543,10 +540,14 @@ namespace WinMRSnippets.Samples.Input
             }
         }
 
-        public bool TryGetCursorCoordinates ( out Vector3 position , out GameObject target )  
+ 
+ 
+        public bool TryGetCursorCoordinates(out Vector3 position, out Vector3 normal, out GameObject target)
         {
             position = Vector3.zero;
-            target = null; 
+            target = null;
+            normal = Vector3.zero; 
+ 
             InputSource source = null; 
             if ( _inputSources.TryGetValue( activeInputId, out source))
             {                
@@ -554,6 +555,8 @@ namespace WinMRSnippets.Samples.Input
                 {
                     position = source.pointerEvent.pointerCurrentRaycast.worldPosition;
                     target = source.pointerEvent.pointerCurrentRaycast.gameObject;
+                    normal = source.pointerEvent.pointerCurrentRaycast.worldNormal; 
+
                     TraceHelper.LogDiff(string.Format("Try get cursor returns: {0}", target.name), TraceCacheGrouping.LastPosition); 
                     return true; 
                 }
@@ -589,7 +592,7 @@ namespace WinMRSnippets.Samples.Input
         {
 #if TRACING_VERBOSE
             Debug.Log("InputModule::DeactivateModule()");
-#endif 
+#endif
             base.DeactivateModule();
             ClearSelection();
             StopControllerEventListeners();
@@ -630,7 +633,7 @@ namespace WinMRSnippets.Samples.Input
                     (eventSystem.currentSelectedGameObject != null) ? eventSystem.currentSelectedGameObject.name : "null", 
                     (currentOverGo != null) ? currentOverGo.name : "null"  
                     ));
-#endif 
+#endif
                 eventSystem.SetSelectedGameObject(null, pointerEvent);
             }
         }
@@ -638,7 +641,7 @@ namespace WinMRSnippets.Samples.Input
 
  
 
-        #region InputModule State 
+#region InputModule State 
 
         //Note the naming convention: 
         // Allow*  is used for properties/state that are always on, regardless of current input source 
@@ -729,7 +732,7 @@ namespace WinMRSnippets.Samples.Input
             return source; 
         }
 
-        #endregion 
+#endregion
 
         public override void Process()
         {
@@ -827,7 +830,7 @@ namespace WinMRSnippets.Samples.Input
                                     activeSource.pointerEvent.clickCount++;
 #if TRACING_VERBOSE
                                     Debug.Log("Same control debounce at " + activeSource.pointerEvent.pointerPress.name );
-#endif 
+#endif
                                 }
                                 // no else because we fall back to firing as a new event (via needsToFireClick == true ) 
                             }
@@ -838,7 +841,7 @@ namespace WinMRSnippets.Samples.Input
                                 activeSource.pointerEvent.clickCount = 1;
 #if TRACING_VERBOSE
                                 Debug.Log("Firing Click for " + newPressed.name);
-#endif 
+#endif
                                 ExecuteEvents.Execute(newPressed, activeSource.pointerEvent, ExecuteEvents.pointerClickHandler);
                             }
                         }
@@ -855,7 +858,7 @@ namespace WinMRSnippets.Samples.Input
                 {
 #if TRACING_VERBOSE
                     Debug.Log("***Clearing selection***");
-#endif 
+#endif
                     DeselectIfSelectionChanged(currentTargetGO, activeSource.pointerEvent);
                 }
 
@@ -865,7 +868,7 @@ namespace WinMRSnippets.Samples.Input
                     {
 #if TRACING_VERBOSE
                         Debug.Log("Pointer Up" + activeSource.pointerEvent.pointerPress.name);
-#endif 
+#endif
                         ExecuteEvents.Execute(activeSource.pointerEvent.pointerPress, activeSource.pointerEvent, ExecuteEvents.pointerUpHandler);
                         // data.pointerEvent.rawPointerPress = null;
                         //  data.pointerEvent.pointerPress = null;
@@ -895,12 +898,12 @@ namespace WinMRSnippets.Samples.Input
                 {
                     Debug.Log("Game Pad A pressed => Select"); 
                 }
-#endif 
+#endif
 
             }
         }
 
-        #endregion 
+#endregion
 
         bool IsSupportedKind ( InputSourceKind kind )
         {
@@ -908,7 +911,7 @@ namespace WinMRSnippets.Samples.Input
         }
 
 
-        #region public Methods 
+#region public Methods 
 
         public InputSource AddInputSource ( uint id , InputSourceKind kind  )
         {
@@ -967,13 +970,13 @@ namespace WinMRSnippets.Samples.Input
                 controllerData.IsMotionControllerSelectReleased = (controllerData.IsMotionControllerSelectPressed && !isTriggerPressed);
                 controllerData.IsMotionControllerSelectPressed = isTriggerPressed;
 
-#if !INPUT_MODULE_USE_ONLY_SELECT 
+#if !INPUT_MODULE_USE_ONLY_SELECT
                 controllerData.IsMotionControllerGraspReleased = controllerData.IsMotionControllerGraspPressed && !isGrasped;
                 controllerData.IsMotionControllerGraspPressed = isGrasped;
 
                 controllerData.IsMotionControllerMenuReleased = controllerData.IsMotionControllerMenuPressed && !isMenuPressed;
                 controllerData.IsMotionControllerMenuPressed = isMenuPressed;                
-#endif 
+#endif
 
             } 
         }
@@ -989,11 +992,9 @@ namespace WinMRSnippets.Samples.Input
             }
         }
 
-        #endregion
+#endregion
 
 
-
-        #region Experimental 
         public Transform parentTransform;
         bool useParentTransform = false;         
         public void SetParentTransform ( Transform parent )
@@ -1007,51 +1008,10 @@ namespace WinMRSnippets.Samples.Input
         {
             if ( useParentTransform )
             {
-#if EXPERIMENTING_PARENTINIT
-                //This works on basic 0.1 offset scenario.. 
-                //Vector3 transformedPosition = position + parentTransform.position ;
-                //Vector3 transformedForward = forward;
-
                 Vector3 transformedPosition = parentTransform.TransformPoint(position);
-                Vector3 transformedForward = parentTransform.TransformDirection(forward);
-
-                //Quite far .. 
-                //Vector3 transformedPosition = parentTransform.InverseTransformPoint(position);
-                //Vector3 transformedForward = parentTransform.InverseTransformPoint(forward);
-
-
-                //Quite far at 0.1 
-                //Vector3 transformedPosition = parentTransform.position + position;
-                //Vector3 transformedForward = parentTransform.position + forward;
-
-                //feels same as above
-                //Vector3 transformedPosition = parentTransform.TransformPoint(parentTransform.InverseTransformPoint(position));
-                //Vector3 transformedForward = parentTransform.TransformDirection(parentTransform.InverseTransformDirection(forward));
-
-                //some offset but not exact 
-                //Vector3 transformedPosition = position  + parentTransform.position;
-                //Vector3 transformedForward = forward;
-
-
-                //Vector3 transformedPosition = parentTransform.TransformPoint(position);
-                //Vector3 transformedForward = parentTransform.TransformDirection(forward);
-
-                //Vector3 transformedPosition = this.transform.InverseTransformPoint(parentTransform.TransformPoint(position));
-                //Vector3 transformedForward = this.transform.InverseTransformDirection(parentTransform.TransformDirection(forward));
-
-
-                TraceHelper.LogDiff(string.Format("parent:{4}, module:{5}, pos:{0}->{1},for:{2}->{3}",
-                    position, transformedPosition, forward, transformedForward,
-                    parentTransform.localPosition, this.transform.localPosition ), TraceCacheGrouping.ForwardPosition 
-                    ); 
-
+                Vector3 transformedForward = parentTransform.TransformDirection(forward);                                  
                 data.Position = transformedPosition;
-                data.ForwardPointer = transformedForward;
-
-#else
-                data.Position = position;
-                data.ForwardPointer = forward;
-#endif
+                data.ForwardPointer = transformedForward;                 
             }
             else
             {
@@ -1060,7 +1020,7 @@ namespace WinMRSnippets.Samples.Input
             }
         }
           
-#endregion
+
 
 #if !SKIPTROUBLESHOOTINGCODE
         void DoRandomHitTesting( WinMREventData data )

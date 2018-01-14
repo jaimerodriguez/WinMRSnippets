@@ -1,7 +1,10 @@
-﻿using System.Collections;
+﻿#define EXPERIMENTING_CURSOR_NORMAL 
+
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+
 
 public class BasicCursor : MonoBehaviour {
 
@@ -24,32 +27,37 @@ public class BasicCursor : MonoBehaviour {
 	void Update () {
 
         Vector3 position = Vector3.zero;
-        GameObject target; 
-        if( WinMRSnippets.Samples.Input.WinMRInputModule.Instance.TryGetCursorCoordinates(out position , out target  ))
+        GameObject target;
+
+ 
+        Vector3 normal; 
+        if (WinMRSnippets.Samples.Input.WinMRInputModule.Instance.TryGetCursorCoordinates(out position, out normal, out target))
         {
-            this.transform.position = position; 
-            if ( loader != null)
+            this.transform.position = position;
+            this.transform.rotation = Quaternion.LookRotation(normal); 
+            if (loader != null)
             {
                 if (target == null)
                 {
                     loader.StopGazeTimerAnimation();
-                    currentLookAtTarget = null; 
-                } 
+                    currentLookAtTarget = null;
+                }
                 else if (target != currentLookAtTarget)
-                {                    
+                {
                     GameObject handler = ExecuteEvents.GetEventHandler<IPointerClickHandler>(target);
-                    if (handler != null  && handler != currentLookAtTarget )
+                    if (handler != null && handler != currentLookAtTarget)
                     {
                         loader.StartGazeTimerAnimation();
                         Debug.Log("new target: " + target.name);
                         currentLookAtTarget = handler;
-                    } 
+                    }
                 }
             }
         }
         else
         {
-            this.transform.position = new Vector3(0f, 0f, 1.4f); 
-        }
+            //TODO: 
+            this.transform.position = new Vector3(0f, 0f, 1.4f);
+        } 
 	}
 }

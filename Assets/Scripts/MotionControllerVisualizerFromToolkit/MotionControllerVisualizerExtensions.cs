@@ -61,12 +61,8 @@ namespace HoloToolkit.Unity.InputModule
             FinishControllerSetup(target, source.handedness.ToString(), source.id);
 
             if (ShowDebugAxis)
-            {
-                TraceHelper.LogOnUnityThread("Attaching Debug Axis to " + source.handedness);
-                Debug.Log(string.Format("Attaching axis renderer. Target:{0} parent:{1}",
-                        target.name, parent.gameObject.name));
-
-#if EXPERIMENTING_PARENTINIT
+            {                 
+                //Deactivate target so we can call Init and set parent property on component without Awake/Start running 
                 target.SetActive(false); 
                 AxisRenderer axisRenderer = null;
                 if (source.handedness == InteractionSourceHandedness.Left)
@@ -75,13 +71,6 @@ namespace HoloToolkit.Unity.InputModule
                     axisRenderer= axisRendererRight = target.AddComponent<AxisRenderer>();
                 axisRenderer.Init(false, parent); 
                 target.SetActive(true);
-#else //ORIGINAL                   
-                 AxisRenderer axisRenderer = null;
-                if (source.handedness == InteractionSourceHandedness.Left)
-                    axisRenderer= axisRendererLeft = target.AddComponent<AxisRenderer>();
-                else
-                    axisRenderer= axisRendererRight = target.AddComponent<AxisRenderer>();
-#endif
             }
 
 #if SKIPNPUTMODULE

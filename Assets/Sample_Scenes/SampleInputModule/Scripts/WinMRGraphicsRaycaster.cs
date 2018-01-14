@@ -73,7 +73,8 @@ namespace WinMRSnippets.Samples.Input
 
                 if (BlockingObjects != GraphicRaycaster.BlockingObjects.None)
                 {
-                    if ((BlockingObjects & GraphicRaycaster.BlockingObjects.ThreeD) == GraphicRaycaster.BlockingObjects.ThreeD)
+                     
+                    if ( (BlockingObjects == GraphicRaycaster.BlockingObjects.ThreeD) || (BlockingObjects == GraphicRaycaster.BlockingObjects.All ) )
                     {
                         RaycastHit hit;
                         if (Physics.Raycast(ray, out hit, hitDistance, m_BlockingMask))
@@ -82,7 +83,7 @@ namespace WinMRSnippets.Samples.Input
                         }
                     }
 
-                    if ((BlockingObjects & GraphicRaycaster.BlockingObjects.TwoD) == GraphicRaycaster.BlockingObjects.TwoD)
+                    if ( (BlockingObjects == GraphicRaycaster.BlockingObjects.TwoD) || (BlockingObjects == GraphicRaycaster.BlockingObjects.All) ) 
                     {
                         RaycastHit2D hit = Physics2D.Raycast(ray.origin, ray.direction, eventData.pointerCurrentRaycast.depth, m_BlockingMask);
                         if (hit.collider != null)
@@ -185,7 +186,7 @@ namespace WinMRSnippets.Samples.Input
                 if (!RectTransformUtility.RectangleContainsScreenPoint(graphic.rectTransform, pointerPosition, eventCamera))
                     continue;
 
-                if (graphic.Raycast(pointerPosition, eventCamera))
+                if (graphic.Raycast(pointerPosition, eventCamera ))
                 {
                     s_SortedGraphics.Add(new TGraphicRaycastResult()
                     {
