@@ -11,11 +11,11 @@ PlayerSettings:
   targetDevice: 2
   useOnDemandResources: 0
   accelerometerFrequency: 60
-  companyName: DefaultCompany
-  productName: AASnippets
+  companyName: Samples
+  productName: WinMRSnippets
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
-  m_SplashScreenBackgroundColor: {r: 0, g: 0, b: 0.1254902, a: 0}
+  m_SplashScreenBackgroundColor: {r: 0.1254902, g: 0.17254902, b: 0.2901961, a: 0}
   m_ShowUnitySplashScreen: 1
   m_ShowUnitySplashLogo: 1
   m_SplashScreenOverlayOpacity: 1
@@ -39,7 +39,7 @@ PlayerSettings:
     width: 1
     height: 1
   m_SplashScreenLogos: []
-  m_VirtualRealitySplashScreen: {fileID: 2800000, guid: 8b002fa349bf33e4496dd8f1ad8a33de,
+  m_VirtualRealitySplashScreen: {fileID: 2800000, guid: 0f621fb5f8e8cd842b8ecabc95805374,
     type: 3}
   m_HolographicTrackingLossScreen: {fileID: 0}
   defaultScreenWidth: 1024
@@ -49,7 +49,7 @@ PlayerSettings:
   m_StereoRenderingPath: 0
   m_ActiveColorSpace: 0
   m_MTRendering: 1
-  m_StackTraceTypes: 010000000000000001000000010000000100000001000000
+  m_StackTraceTypes: 010000000100000001000000010000000100000001000000
   iosShowActivityIndicatorOnLoading: -1
   androidShowActivityIndicatorOnLoading: -1
   tizenShowActivityIndicatorOnLoading: -1
@@ -104,6 +104,8 @@ PlayerSettings:
   n3dsEnableVSync: 0
   ignoreAlphaClear: 0
   xboxOneResolution: 0
+  xboxOneSResolution: 0
+  xboxOneXResolution: 3
   xboxOneMonoLoggingLevel: 0
   xboxOneLoggingLevel: 1
   xboxOneDisableEsram: 0
@@ -247,7 +249,10 @@ PlayerSettings:
   androidGamepadSupportLevel: 0
   resolutionDialogBanner: {fileID: 0}
   m_BuildTargetIcons: []
-  m_BuildTargetBatching: []
+  m_BuildTargetBatching:
+  - m_BuildTarget: Windows Store Apps
+    m_StaticBatching: 0
+    m_DynamicBatching: 1
   m_BuildTargetGraphicsAPIs: []
   m_BuildTargetVRSettings:
   - m_BuildTarget: Metro
@@ -551,22 +556,23 @@ PlayerSettings:
     Metro: 3
   m_RenderingPath: 1
   m_MobileRenderingPath: 1
-  metroPackageName: AASnippets
+  metroPackageName: AAWinMRSnippets
   metroPackageVersion: 1.0.0.0
   metroCertificatePath: Assets\WSATestCertificate.pfx
   metroCertificatePassword: 
   metroCertificateSubject: DefaultCompany
   metroCertificateIssuer: DefaultCompany
   metroCertificateNotAfter: 8086b882f53dd401
-  metroApplicationDescription: AASnippets
+  metroApplicationDescription: WinMR Snippets
   wsaImages:
-    131172: Assets/AppIcons/Wide-620x300.png
-    131272: Assets/AppIcons/SplashVerbose1240x600.png
-    2162788: Assets/AppIcons/Square-150x150.png
-    2162888: Assets/AppIcons/Square-300x300.png
-    2228324: Assets/AppIcons/Square-310x310.png
-    2293960: Assets/AppIcons/Wide-620x300.png
-  metroTileShortName: AASnippets
+    131172: Assets/WinMRSnippets-Examples/WindowsAssets/AppIcons/Wide-620x300.png
+    131272: Assets/WinMRSnippets-Examples/WindowsAssets/AppIcons/SplashVerbose1240x600.png
+    720996: Assets/WinMRSnippets-Examples/WindowsAssets/AppIcons/Square-150x150.png
+    2162788: Assets/WinMRSnippets-Examples/WindowsAssets/AppIcons/Square-150x150.png
+    2162888: Assets/WinMRSnippets-Examples/WindowsAssets/AppIcons/Square-300x300.png
+    2228324: Assets/WinMRSnippets-Examples/WindowsAssets/AppIcons/Square-310x310.png
+    2293960: Assets/WinMRSnippets-Examples/WindowsAssets/AppIcons/Wide-620x300.png
+  metroTileShortName: WinMRSnippets
   metroCommandLineArgsFile: 
   metroTileShowName: 0
   metroMediumTileShowName: 1
@@ -574,8 +580,8 @@ PlayerSettings:
   metroWideTileShowName: 0
   metroDefaultTileSize: 1
   metroTileForegroundText: 1
-  metroTileBackgroundColor: {r: 0, g: 0, b: 0.1254902, a: 0}
-  metroSplashScreenBackgroundColor: {r: 0, g: 0, b: 0.1254902, a: 0}
+  metroTileBackgroundColor: {r: 0.1254902, g: 0.17254902, b: 0.2901961, a: 0}
+  metroSplashScreenBackgroundColor: {r: 0.1254902, g: 0.17254902, b: 0.2901961, a: 0}
   metroSplashScreenUseBackgroundColor: 1
   platformCapabilities:
     WindowsStoreApps:
@@ -603,7 +609,7 @@ PlayerSettings:
       UserAccountInformation: False
       VideosLibrary: False
       VoipCall: False
-      WebCam: True
+      WebCam: False
   metroFTAName: 
   metroFTAFileTypes: []
   metroProtocolName: 
