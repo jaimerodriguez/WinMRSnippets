@@ -29,7 +29,7 @@ namespace WinMRSnippets.Samples
         public Material GLTFMaterial;
         public bool ShowDebugAxis = false;
         public bool AnimateControllerModel = true;
-        private AxisRenderer axisRendererLeft, axisRendererRight;
+        private DebugAxisRenderer axisRendererLeft, axisRendererRight;
 
 
 
@@ -380,13 +380,13 @@ namespace WinMRSnippets.Samples
 #endif
                     if (ShowDebugAxis)
                     {
-                        AxisRenderer axis = (state.IsLeftHand ? axisRendererLeft : axisRendererRight);
+                        DebugAxisRenderer axis = (state.IsLeftHand ? axisRendererLeft : axisRendererRight);
                         if (axis != null)
                         {
                             if (hasPointerForward && hasPointerPosition)
-                                axis.SetWorldValues(state.PointerPosition, pointerForward, state.PointerRotation, AxisRenderer.ControllerElement.Pointer);
+                                axis.SetWorldValues(state.PointerPosition, pointerForward, state.PointerRotation, DebugAxisRenderer.ControllerElement.Pointer);
                             if (hasGripForward && hasPosition)
-                                axis.SetWorldValues(state.GripPosition, gripForward, state.GripRotation, AxisRenderer.ControllerElement.Grip);
+                                axis.SetWorldValues(state.GripPosition, gripForward, state.GripRotation, DebugAxisRenderer.ControllerElement.Grip);
                         }
                     }
                 }
@@ -513,9 +513,9 @@ namespace WinMRSnippets.Samples
             if (ShowDebugAxis)
             {
                 if (source.handedness == InteractionSourceHandedness.Left)
-                    axisRendererLeft = target.AddComponent<AxisRenderer>();
+                    axisRendererLeft = target.AddComponent<DebugAxisRenderer>();
                 else
-                    axisRendererRight = target.AddComponent<AxisRenderer>();
+                    axisRendererRight = target.AddComponent<DebugAxisRenderer>();
             }
 
         }
@@ -561,10 +561,10 @@ namespace WinMRSnippets.Samples
                             GameObject target = transform.gameObject;
                             if (state.source.handedness == InteractionSourceHandedness.Left)
                             {
-                                axisRendererLeft = target.AddComponent<AxisRenderer>();
+                                axisRendererLeft = target.AddComponent<DebugAxisRenderer>();
                             }
                             else
-                                axisRendererRight = target.AddComponent<AxisRenderer>();
+                                axisRendererRight = target.AddComponent<DebugAxisRenderer>();
 
                             ids.Add(id);
                         }

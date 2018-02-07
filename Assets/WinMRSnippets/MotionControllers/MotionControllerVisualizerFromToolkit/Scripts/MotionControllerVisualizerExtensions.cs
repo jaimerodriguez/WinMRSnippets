@@ -32,12 +32,16 @@ namespace HoloToolkit.Unity.InputModule
 
     public partial class MotionControllerVisualizer : MonoBehaviour , IControllerVisualizer 
     {
-        public bool ShowDebugAxis = false;
-        AxisRenderer axisRendererLeft, axisRendererRight;
+        [Tooltip("Shows a Debug Axis Renderer. Do not use in production; it is not polished UI")]
+        [SerializeField]
+        private bool ShowDebugAxis = false;
 
-#if !UNITY_5
-        private InteractionSourceNode nodeType; 
-#endif 
+        [Tooltip ("The part of the controller to pivot around for position & rotation. Grip is recommended")]
+        [SerializeField]
+        private InteractionSourceNode nodeType = InteractionSourceNode.Grip ;
+
+        private DebugAxisRenderer axisRendererLeft, axisRendererRight;
+       
 
         private List<uint> inProgressSources = new List<uint>(); 
         private void LoadControllerModelFromProvider ( InteractionSource source )
@@ -62,19 +66,14 @@ namespace HoloToolkit.Unity.InputModule
             {                 
                 //Deactivate target so we can call Init and set parent property on component without Awake/Start running 
                 target.SetActive(false); 
-                AxisRenderer axisRenderer = null;
+                DebugAxisRenderer axisRenderer = null;
                 if (source.handedness == InteractionSourceHandedness.Left)
-                    axisRenderer= axisRendererLeft = target.AddComponent<AxisRenderer>();
+                    axisRenderer= axisRendererLeft = target.AddComponent<DebugAxisRenderer>();
                 else
-                    axisRenderer= axisRendererRight = target.AddComponent<AxisRenderer>();
+                    axisRenderer= axisRendererRight = target.AddComponent<DebugAxisRenderer>();
                 axisRenderer.Init(false, parent); 
                 target.SetActive(true);
             }
-
-#if SKIPNPUTMODULE
-            WinMRSnippets.Samples.Input.MotionControllerInputModule.Instance.AddController(source.id );
-            WinMRSnippets.Samples.Input.MotionControllerInputModule.Instance.AddController(source.id);
-#endif
         } 
 
         private Transform ControllersRoot 
@@ -93,107 +92,39 @@ namespace HoloToolkit.Unity.InputModule
             Vector3 pointerForward = Vector3.zero , gripForward = Vector3.zero, gripPosition = Vector3.zero, pointerPosition = Vector3.zero;             
             bool    hasPointerPosition = false , hasGripPosition = false , hasGripRotation = false , 
                     hasPointerRotation = false , hasPointerForward = false , hasGripForward = false ;
-            Quaternion pointerRotation = Quaternion.identity, gripRotation = Quaternion.identity ;
-            Ray pointerRay;  
-
- //          TraceHelper.Log("Updating debug axis");
+            Quaternion pointerRotation = Quaternion.identity, gripRotation = Quaternion.identity ;           
 
             if (
-#if !UNITY_5
                  (hasPointerPosition = state.sourcePose.TryGetPosition(out pointerPosition, InteractionSourceNode.Pointer)) &&
                  (hasPointerForward = state.sourcePose.TryGetForward(out pointerForward, InteractionSourceNode.Pointer)) &&
                  (hasPointerRotation = state.sourcePose.TryGetRotation(out pointerRotation, InteractionSourceNode.Pointer)) && 
                  (hasGripForward = state.sourcePose.TryGetForward(out gripForward, InteractionSourceNode.Grip)) &&
                  (hasGripPosition = state.sourcePose.TryGetPosition(out gripPosition, InteractionSourceNode.Grip)) &&                 
                  (hasGripRotation = state.sourcePose.TryGetRotation(out gripRotation, InteractionSourceNode.Grip)) 
-                
-#else
-
-                 (hasPointerPosition = hasPointerForward = state.sourcePose.TryGetPointerRay(out pointerRay )) &&                  
-                 //(hasGripForward = state.sourcePose.TryGetForward(out gripForward )) &&
-                 (hasGripPosition = state.sourcePose.TryGetPosition(out gripPosition )) &&                 
-                 (hasGripRotation = state.sourcePose.TryGetRotation(out gripRotation ))
-#endif
-                 )
+                )
              {
-#if UNITY_5
-                if (hasPointerPosition && hasPointerForward)
-                {
-                    pointerPosition = pointerRay.origin;
-                    pointerForward = pointerRay.direction;
-                } 
-#endif
-                AxisRenderer axis = (state.IsLeftHand() ? axisRendererLeft : axisRendererRight);
+                DebugAxisRenderer axis = (state.IsLeftHand() ? axisRendererLeft : axisRendererRight);
                 if (axis != null)
                 {
                     if ( hasPointerPosition && hasPointerRotation )
-                        axis.SetWorldValues(pointerPosition, pointerForward , pointerRotation, AxisRenderer.ControllerElement.Pointer);
+                        axis.SetWorldValues(pointerPosition, pointerForward , pointerRotation, DebugAxisRenderer.ControllerElement.Pointer);
                     if (hasGripPosition && hasGripRotation )
-                        axis.SetWorldValues(gripPosition, gripForward , gripRotation, AxisRenderer.ControllerElement.Grip);
+                        axis.SetWorldValues(gripPosition, gripForward , gripRotation, DebugAxisRenderer.ControllerElement.Grip);
                 }
             }
- 
-            //TraceHelper.Assert(hasPointerForward && hasGripForward && hasGripPosition &&
-            //                     hasPointerPosition && hasGripRotation && hasPointerRotation, "Show debug axis should not fail");
-
-
-#if SKIPNPUTMODULE
-            WinMRSnippets.Samples.Input.MotionControllerInputModule.Instance.SetPosition( state.source.id, pointerPosition);
-            WinMRSnippets.Samples.Input.MotionControllerInputModule.Instance.SetForwardPointer (state.source.id, pointerForward);
-            WinMRSnippets.Samples.Input.MotionControllerInputModule.Instance.SetButtonStates(state.source.id,
-                    state.selectPressed, state.grasped, state.menuPressed ); 
-#endif
         }
-
-
-        LineRenderer pointer = null; 
-        public void DrawPointer ( InteractionSourceState state )
-        {
-            return; 
-
-            if ( pointer == null )
-            {
-                pointer = this.gameObject.AddComponent<LineRenderer>();
-                pointer.useWorldSpace = false ;
-                 
-                pointer.positionCount = 2;
-                var material = Resources.Load<UnityEngine.Material>("AxisRendererMaterial");
-                if (material != null)
-                {
-                    pointer.material = material;
-                }
-                float RayWidth = 0.025f; 
-                pointer.startWidth = RayWidth;
-                pointer.endWidth = RayWidth;
-             }
-
-            Vector3 pointerPosition = Vector3.zero;
-            Vector3 pointerForward = Vector3.forward;
-
-            if ( 
-                state.sourcePose.TryGetPosition(out pointerPosition, InteractionSourceNode.Pointer)  && 
-                state.sourcePose.TryGetForward( out pointerForward, InteractionSourceNode.Pointer) 
-                )
-            {
-                pointer.SetPosition(0, pointerPosition);
-                pointer.SetPosition(1, pointerPosition + pointerForward * 2 );
-            }
-
-            
-
-        }
+        
     }
 
 
     public static class Extensions
     {
-#if !UNITY_5
         public static bool Update(this MotionControllerInfo currentController, InteractionSourceState sourceState, 
             InteractionSourceNode nodeType , bool updatePosition = true, bool updateRotation = false )
         {
             Vector3 newPosition;
-            bool retValPosition = false , retValRotation = false ;
-            if (updatePosition && (retValPosition = sourceState.sourcePose.TryGetPosition(out newPosition, nodeType)))
+            bool hasPosition = false , hasRotation = false ;
+            if (updatePosition && (hasPosition = sourceState.sourcePose.TryGetPosition(out newPosition, nodeType)))
             {
 #if DEBUG
                 if (newPosition.IsDebugValid())
@@ -202,7 +133,7 @@ namespace HoloToolkit.Unity.InputModule
 
                     currentController.ControllerParent.transform.localPosition = newPosition;
                 }
-#if DEBUG
+#if DEBUG && TRACING_VERBOSE 
                 else
                 {
                     Debug.Log("Skipping newPosition:" + newPosition.ToString());
@@ -210,36 +141,14 @@ namespace HoloToolkit.Unity.InputModule
 #endif
             } 
             Quaternion newRotation;
-            if (updateRotation && (retValRotation = sourceState.sourcePose.TryGetRotation(out newRotation, nodeType))) 
+            if (updateRotation && (hasRotation = sourceState.sourcePose.TryGetRotation(out newRotation, nodeType))) 
             {
                 currentController.ControllerParent.transform.localRotation = newRotation;
             } 
-
-           // TraceHelper.Log(string.Format("{0}:Pos{1},Rot{2}", nodeType, newPosition, newRotation)); 
-           // TraceHelper.Assert( retValPosition && retValRotation, "Update should not fail"); 
-            return retValRotation && retValPosition ;             
+        
+            return hasRotation && hasPosition ;             
         }
-#else
-        public static bool Update(this MotionControllerInfo currentController, InteractionSourceState sourceState, object unused  )
-        {
-            Vector3 newPosition;
-            bool retValPosition, retValRotation;
-            if (retValPosition = sourceState.sourcePose.TryGetPosition(out newPosition ))
-            {
-                currentController.ControllerParent.transform.localPosition = newPosition;
-            }
-            Quaternion newRotation;
-            if (retValRotation = sourceState.sourcePose.TryGetRotation(out newRotation ))
-            {
-                currentController.ControllerParent.transform.localRotation = newRotation;
-            }
-
-            // TraceHelper.Log(string.Format("{0}:Pos{1},Rot{2}", nodeType, newPosition, newRotation)); 
-            TraceHelper.Assert(retValPosition && retValRotation, "Update should not fail");
-            return retValRotation && retValPosition;
-        }
-#endif
-
+ 
 
         public static bool IsLeftHand ( this InteractionSourceState state )
         {

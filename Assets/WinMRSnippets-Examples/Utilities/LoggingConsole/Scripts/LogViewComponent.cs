@@ -21,10 +21,6 @@ public class LogViewComponent : MonoBehaviour
         }
 #endif 
 
-#if UNITY_5
-        //TODO:  investigate why unity 5 builds throw 
-        return; 
-#endif 
         if (this.textGen == null)
         {
             this.textGen = new TextGenerator();
@@ -44,16 +40,26 @@ public class LogViewComponent : MonoBehaviour
     void Start()
     {
         Debug.Assert(this.logLinePrefab.GetComponent<Text>() != null);
+        Debug.unityLogger.logHandler = new DebugHandler(this); 
 
-#if UNITY_5
-        Debug.logger.logHandler = new DebugHandler(this);
-#else
-      Debug.unityLogger.logHandler = new DebugHandler(this); 
-#endif
     }
-	
-	void Update()
-    {        
+
+    
+    float lastClearTime = 0f;
+    float debounceTime = 1f;
+    void Update()
+    {
+        if (Input.GetKey("space")   /* && (Input.GetKeyDown(KeyCode.LeftControl) || Input.GetKeyDown(KeyCode.RightControl))*/ )
+        {
+            Debug.Log("Space");
+            if (Time.time > (lastClearTime + debounceTime))
+            {
+                Clear();
+                lastClearTime = Time.time;
+            }
+
+        }
+
         var viewTransform = (RectTransform)this.gameObject.transform;
 
         if (this.logLines.Last == null)

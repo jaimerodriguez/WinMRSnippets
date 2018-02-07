@@ -5,7 +5,7 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 0
+  - enabled: 1
     path: Assets/WinMRSnippets-Examples/SampleInputModule/Scenes/InputModuleTest.unity
     guid: b149e38d04ee1b845b7ffb32c9a4e448
   - enabled: 0
@@ -14,14 +14,14 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/WinMRSnippets-Examples/ControllerListenersForLearning/IMPoll.unity
     guid: b297379339e428942a690e024330c67f
-  - enabled: 1
-    path: Assets/WinMRSnippets-Examples/SpacesandXRDevice/SpaceScene.unity
+  - enabled: 0
+    path: Assets/WinMRSnippets-Examples/SpacesandXRDevice/BoundariesAndSpaces.unity
     guid: ddcabfe332420c645b150a4d23409058
   - enabled: 0
     path: Assets/WinMRSnippets-Examples/Gamepad/Gamepad.unity
     guid: e06159016e1432a4fa32631306e6afb5
   - enabled: 0
-    path: Assets/WinMRSnippets-Examples/ControllerVisualizerFromToolkit/JustController.unity
+    path: Assets/WinMRSnippets-Examples/ControllerVisualizerFromToolkit/Controller.unity
     guid: d067a106c3470674d9cc31c990bb29f4
   - enabled: 0
     path: Assets/WinMRSnippets-Examples/ControllerListenersForLearning/Listeners.unity

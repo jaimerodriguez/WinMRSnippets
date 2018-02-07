@@ -651,9 +651,8 @@ MonoBehaviour:
   RightControllerOverride: {fileID: 0}
   TouchpadTouchedOverride: {fileID: 0}
   GLTFMaterial: {fileID: 2100000, guid: f821a0098f2d80f49a94f9c9aeabe86b, type: 2}
-  trackPosition: 1
-  trackRotation: 1
   ShowDebugAxis: 1
+  nodeType: 0
 --- !u!4 &583580514
 Transform:
   m_ObjectHideFlags: 0
@@ -2072,6 +2071,15 @@ Prefab:
     - target: {fileID: 1989074223368054, guid: 6219759290408ea46a4ab67623d8867d, type: 2}
       propertyPath: m_Name
       value: DebugConsole
+      objectReference: {fileID: 0}
+    - target: {fileID: 114786351138977780, guid: 6219759290408ea46a4ab67623d8867d,
+        type: 2}
+      propertyPath: m_Text
+      value: Console Trace
+      objectReference: {fileID: 0}
+    - target: {fileID: 1109141625344786, guid: 6219759290408ea46a4ab67623d8867d, type: 2}
+      propertyPath: m_Name
+      value: Title
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: 6219759290408ea46a4ab67623d8867d, type: 2}

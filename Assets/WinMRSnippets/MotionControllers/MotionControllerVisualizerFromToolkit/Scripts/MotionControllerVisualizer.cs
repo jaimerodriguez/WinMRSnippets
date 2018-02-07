@@ -50,10 +50,7 @@ namespace HoloToolkit.Unity.InputModule
         // This will be used to keep track of our controllers, indexed by their unique source ID.
         private Dictionary<uint, MotionControllerInfo> controllerDictionary = new Dictionary<uint, MotionControllerInfo>(0);
 
-#if EXTEND_TOOLKIT_MOTION_CONTROLLER
-        public bool trackPosition = true;
-        public bool trackRotation = true; 
-#endif 
+ 
         private void Start()
         {
 #if !UNITY_2017_2_OR_NEWER
@@ -63,8 +60,7 @@ namespace HoloToolkit.Unity.InputModule
 #endif
 
 #if EXTEND_TOOLKIT_MOTION_CONTROLLER
-            ControllerModelProvider.Instance.StartListening();
-           
+            ControllerModelProvider.Instance.StartListening();           
 #endif 
 
 #if UNITY_WSA && UNITY_2017_2_OR_NEWER
@@ -83,19 +79,7 @@ namespace HoloToolkit.Unity.InputModule
                         Debug.Log("Only one override is specified, and no material is specified for the glTF model. Please set the material or the " + ((LeftControllerOverride == null) ? "left" : "right") + " controller override on " + name + ".");
                     }
                 }
-            }
-            else
-            {
-                // Since we're using non-Unity APIs, glTF will only load in a UWP app.
-                if (LeftControllerOverride == null && RightControllerOverride == null)
-                {
-                    Debug.Log("Running in the editor won't render the glTF models, and no controller overrides are set. Please specify them on " + name + ".");
-                }
-                else if (LeftControllerOverride == null || RightControllerOverride == null)
-                {
-                    Debug.Log("Running in the editor won't render the glTF models, and only one controller override is specified. Please set the " + ((LeftControllerOverride == null) ? "left" : "right") + " override on " + name + ".");
-                }
-            }
+            }            
 
             InteractionManager.InteractionSourceDetected += InteractionManager_InteractionSourceDetected;
             InteractionManager.InteractionSourceUpdated += InteractionManager_InteractionSourceUpdated;
@@ -150,18 +134,12 @@ namespace HoloToolkit.Unity.InputModule
                     {
                         currentController.ControllerParent.transform.localRotation = newRotation;
                     }
-#else
-                    
-                    currentController.Update(sourceState, nodeType, trackPosition, trackRotation );
-                     
-
+#else                    
+                    currentController.Update(sourceState, nodeType, true, true);                    
                     if (ShowDebugAxis)
                     {
                         UpdateDebugAxis(sourceState);
-                    }
-
-                    DrawPointer(sourceState); 
-
+                    }                   
 #endif
                 }
             }
@@ -283,10 +261,6 @@ namespace HoloToolkit.Unity.InputModule
                 {
                     controllerDictionary.Remove(source.id);
                     Destroy(controller.ControllerParent);
-
-#if SKIPNPUTMODULE
-                    WinMRSnippets.Samples.Input.MotionControllerInputModule.Instance.RemoveController(source.id); 
-#endif 
                 }
             }
         }

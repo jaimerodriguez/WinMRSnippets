@@ -17,7 +17,7 @@ public class UnityInputListener : MonoBehaviour {
     public Material GLTFMaterial;
     public bool ShowDebugAxis = false;
 
-    private AxisRenderer axisRendererLeft, axisRendererRight;
+    private DebugAxisRenderer axisRendererLeft, axisRendererRight;
 
     // Use this for initialization
     void Start()
@@ -120,19 +120,19 @@ public class UnityInputListener : MonoBehaviour {
 
             if (ShowDebugAxis)
             {
-                AxisRenderer axis = null;
+                DebugAxisRenderer axis = null;
                 var angles = rotation.eulerAngles; 
 
                 axis = (nodeType == XRNode.RightHand) ? axisRendererRight : axisRendererLeft;
                 if (axis != null)
                 {                   
-                    axis.SetWorldValues(position,  (rotation * Vector3.forward), rotation, AxisRenderer.ControllerElement.Grip);
+                    axis.SetWorldValues(position,  (rotation * Vector3.forward), rotation, DebugAxisRenderer.ControllerElement.Grip);
                 } 
 
                 if (axis != null)
                 {
                     position.y += .05f; 
-                    axis.SetWorldValues(position, angles, rotation, AxisRenderer.ControllerElement.Pointer );
+                    axis.SetWorldValues(position, angles, rotation, DebugAxisRenderer.ControllerElement.Pointer );
                 }
             } 
 
@@ -288,9 +288,9 @@ public class UnityInputListener : MonoBehaviour {
         if (ShowDebugAxis)
         {
             if (nodeType == XRNode.LeftHand)
-                axisRendererLeft = target.AddComponent<AxisRenderer>();
+                axisRendererLeft = target.AddComponent<DebugAxisRenderer>();
             else
-                axisRendererRight = target.AddComponent<AxisRenderer>();
+                axisRendererRight = target.AddComponent<DebugAxisRenderer>();
         }
     }
 

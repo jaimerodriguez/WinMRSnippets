@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace WinMRSnippets
 {
-    public class AxisRenderer : MonoBehaviour
+    public class DebugAxisRenderer : MonoBehaviour
     {
         LineRenderer pointerRay;
         LineRenderer gripRay;
@@ -15,7 +15,7 @@ namespace WinMRSnippets
         Quaternion pointerRotation, gripRotation;
 
 
-        float AxisLengthScaleFactor = 4.0f;
+        float AxisLengthScaleFactor = 5.0f;
         float scale = .05f;
         Vector3 scaleVector = Vector3.one;
         string LineShaderName = "Standard";
