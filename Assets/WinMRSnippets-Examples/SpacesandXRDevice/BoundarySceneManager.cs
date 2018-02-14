@@ -32,45 +32,91 @@ namespace WinMRSnippets.Samples
         void Start()
         {
 #if UNITY_EDITOR
-                Debug.LogError ("This scene does not work well in the editor. A lot of the native APIs don't work") ; 
-#endif 
+                Debug.LogError ("This scene does not work well in the editor. A lot of the native APIs don't work") ;
+#endif
+
+            commands = new List<Command>() 
+            {
+                new Command(KeyCode.Alpha0, "Help", OnHelp) ,
+                new Command(KeyCode.Alpha1, "Stationary", OnTryStationary) ,
+                new Command(KeyCode.Alpha2, "RoomScale", OnTryRoomscale),
+                new Command(KeyCode.Alpha3, "Dimensions", OnGetDimensions) ,
+                new Command(KeyCode.Alpha4, "Geometry", OnGetGeometry),
+                new Command(KeyCode.Alpha5, "Recenter", OnRecenter) ,
+                new Command(KeyCode.Alpha6, "Positional", OnTogglePositional)
+        };
 
             DumpXRDevice();
             StartCoroutine(StartVoice(5f));
             StartCoroutine(TraceCameraPosition(3f));
         }
 
-        Dictionary<string, System.Action> commands;
+        Dictionary<string, System.Action> voiceCommands ;
         IEnumerator StartVoice(float delay )
         {
-            yield return new WaitForSeconds(5); 
+            yield return new WaitForSeconds(5);
 
-            commands = new Dictionary<string, System.Action>();
-            commands.Add("dimensions", OnGetDimensions);
-            commands.Add("stationary", OnTryStationary);
-            commands.Add("geometry", OnGetGeometry);
-            commands.Add("room scale", OnTryRoomscale);
-            commands.Add("recenter", OnRecenter);
-            commands.Add("positional", OnTogglePositional);
-            commands.Add("help", OnHelp); 
+            voiceCommands = new Dictionary<string, System.Action>();
+            voiceCommands.Add("dimensions", OnGetDimensions);
+            voiceCommands.Add("stationary", OnTryStationary);
+            voiceCommands.Add("geometry", OnGetGeometry);
+            voiceCommands.Add("room scale", OnTryRoomscale);
+            voiceCommands.Add("recenter", OnRecenter);
+            voiceCommands.Add("positional", OnTogglePositional);
+            voiceCommands.Add("help", OnHelp); 
              
-            KeywordRecognizer recognizer = new KeywordRecognizer(commands.Keys.ToArray());
+            KeywordRecognizer recognizer = new KeywordRecognizer(voiceCommands.Keys.ToArray());
             recognizer.OnPhraseRecognized += Recognizer_OnPhraseRecognized;
             recognizer.Start();
             System.Diagnostics.Debug.Assert(recognizer.IsRunning);
             OnHelp();                       
         }
 
+        private class Command
+        {
+            public KeyCode key;
+            public string name;
+            public System.Action action;  
+
+            public Command ( KeyCode k, string n, System.Action a )
+            {
+                key = k;
+                name = n;
+                action = a; 
+            }
+        }
+
+        private List<Command> commands = new List<Command>(); 
+       
+         
+        void Update ()
+        { 
+            foreach ( Command c in commands )
+            {
+                if ( Input.GetKeyUp (c.key))
+                {
+                    c.action.Invoke();
+                    Debug.Log("Invoking for " + c.key);
+                    break; 
+                }
+            }
+        }
+
         void OnHelp ( )
         {
             Debug.Log("Voice recognition commands: ");
-            Debug.Log("Say 'STATIONARY' to set space type to stationary");
-            Debug.Log("Say 'ROOM SCALE' to switch to room scale");
-            Debug.Log("Say 'DIMENSIONS' to get play space dimensions");
-            Debug.Log("Say 'GEOMETRY' to get play space geometry");
-            Debug.Log("Say 'RECENTER' to recenter ");
-            Debug.Log("Say 'POSITIONAL' to Toggle Positional Tracking (Off and on)");
-            Debug.Log("Say 'HELP' to see the commands again");
+            foreach (Command c in commands)
+            {
+                Debug.Log(string.Format("Say '{0}' or press {1}", c.name.ToUpper(), c.key.ToString())) ;
+            }
+
+            //Debug.Log("Say 'STATIONARY' or press 1 to set space type to stationary ");
+            //Debug.Log("Say 'ROOM SCALE' or press 2 to switch to room scale");
+            //Debug.Log("Say 'DIMENSIONS' or press 3 to get play space dimensions");
+            //Debug.Log("Say 'GEOMETRY' or press 4 to get play space geometry");
+            //Debug.Log("Say 'RECENTER' or press 5 to recenter ");
+            //Debug.Log("Say 'POSITIONAL' or press 6 to Toggle Positional Tracking (Off and on)");
+            //Debug.Log("Say 'HELP' or press 0  to see the commands again");
         }
 
         void OnGetDimensions()
@@ -129,7 +175,7 @@ namespace WinMRSnippets.Samples
 
             System.Action keywordAction;
             // if the keyword recognized is in our dictionary, call that Action.
-            if (commands.TryGetValue(args.text, out keywordAction))
+            if (voiceCommands.TryGetValue(args.text, out keywordAction))
             {
 #if TRACING_VERBOSE
             Debug.Log("executing " + args.text);

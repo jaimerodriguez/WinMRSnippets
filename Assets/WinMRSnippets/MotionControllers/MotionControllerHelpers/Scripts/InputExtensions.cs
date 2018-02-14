@@ -315,7 +315,7 @@ public static class UnityTypesExtensions
         if (hasNan)
         {
 #if TRACING_VERBOSE
-            Debug.Log( string.Format ( "Invalid Rotation {0}: {1} ",  debugQuatCount, q ));
+            Debug.Log( string.Format ( "Invalid Rotation {0}",   q ));
 #endif
         }
         return !hasNan;
