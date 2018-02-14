@@ -16,7 +16,7 @@ namespace WinMRSnippets
 
 
         private const uint defaultValue = uint.MinValue;
-        public uint SourceId { get; private set; } = defaultValue ;
+        public uint SourceId { get; private set; }  
 
         private MotionControllerState _currentState; 
         public MotionControllerState State { get { return _currentState; } } 
@@ -31,6 +31,11 @@ namespace WinMRSnippets
             InteractionManager.InteractionSourceUpdated += InteractionManager_InteractionSourceUpdated;
             InteractionManager.InteractionSourcePressed += InteractionManager_InteractionSourcePressed;
             InteractionManager.InteractionSourceReleased += InteractionManager_InteractionSourceReleased;
+        }
+
+        private void Awake()
+        {
+            SourceId = defaultValue;  
         }
 
         private void StopListeners ()

@@ -565,8 +565,8 @@ namespace WinMRSnippets
                     normal = source.pointerEvent.pointerCurrentRaycast.worldNormal;
 
 #if TRACING_VERBOSE 
-                    WinMRSnippets.DebugHelpers.TraceHelper.LogDiff(string.Format("Try get cursor returns: {0}", target.name), 
-                        WinMRSnippets.DebugHelpers.TraceCacheGrouping.LastPosition);
+                    //WinMRSnippets.DebugHelpers.TraceHelper.LogDiff(string.Format("Try get cursor returns: {0}", target.name), 
+                    //    WinMRSnippets.DebugHelpers.TraceCacheGrouping.LastPosition);
 #endif 
                     return true; 
                 }

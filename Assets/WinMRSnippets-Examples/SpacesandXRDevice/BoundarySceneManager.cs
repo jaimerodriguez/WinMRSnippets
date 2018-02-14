@@ -6,12 +6,12 @@ using UnityEngine.Windows.Speech;
 using UnityEngine.XR;
 using System.Linq;
 
+using WinMRSnippets.Samples.Utilities;  
 
 namespace WinMRSnippets.Samples
 {
     public class BoundarySceneManager : MonoBehaviour
     {
-
         #region UNITY EDITOR PROPERTIES 
 
 
@@ -44,7 +44,11 @@ namespace WinMRSnippets.Samples
                 new Command(KeyCode.Alpha4, "Geometry", OnGetGeometry),
                 new Command(KeyCode.Alpha5, "Recenter", OnRecenter) ,
                 new Command(KeyCode.Alpha6, "Positional", OnTogglePositional)
-        };
+            };
+
+            var panelView = GameObject.FindObjectOfType<CommandPanelView>();
+            if ( panelView != null )
+                panelView.PopulateCommands(commands); 
 
             DumpXRDevice();
             StartCoroutine(StartVoice(5f));
@@ -72,19 +76,7 @@ namespace WinMRSnippets.Samples
             OnHelp();                       
         }
 
-        private class Command
-        {
-            public KeyCode key;
-            public string name;
-            public System.Action action;  
-
-            public Command ( KeyCode k, string n, System.Action a )
-            {
-                key = k;
-                name = n;
-                action = a; 
-            }
-        }
+       
 
         private List<Command> commands = new List<Command>(); 
        
