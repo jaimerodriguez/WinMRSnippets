@@ -194,14 +194,12 @@ public class UnityInputListener : MonoBehaviour {
         
         left.SelectValue = Input.GetAxis( UnityInputAxis.MotionController_SelectPressedValue_Left);
         right.SelectValue = Input.GetAxis(UnityInputAxis.MotionController_SelectPressedValue_Right);
-        left.TouchPadXValue = Input.GetAxis(UnityInputAxis.MotionController_TouchpadX_Left);
-        left.TouchPadYValue = Input.GetAxis(UnityInputAxis.MotionController_TouchpadY_Left);
-        right.TouchPadXValue = Input.GetAxis(UnityInputAxis.MotionController_TouchpadX_Right);
-        right.TouchPadYValue = Input.GetAxis(UnityInputAxis.MotionController_TouchpadY_Right);        
-        left.ThumbstickXValue = Input.GetAxis(UnityInputAxis.MotionController_ThumbstickX_Left);
-        left.ThumbstickYValue = Input.GetAxis(UnityInputAxis.MotionController_ThumbstickY_Left);
-        right.ThumbstickXValue = Input.GetAxis(UnityInputAxis.MotionController_ThumbstickX_Right);
-        right.ThumbstickYValue = Input.GetAxis(UnityInputAxis.MotionController_ThumbstickY_Right);
+        left.TouchpadPosition = new Vector2(Input.GetAxis(UnityInputAxis.MotionController_TouchpadX_Left), Input.GetAxis(UnityInputAxis.MotionController_TouchpadY_Left));
+        right.TouchpadPosition = new Vector2(Input.GetAxis(UnityInputAxis.MotionController_TouchpadX_Right), Input.GetAxis(UnityInputAxis.MotionController_TouchpadY_Right));
+
+        left.ThumbStickPosition = new Vector2( Input.GetAxis(UnityInputAxis.MotionController_ThumbstickX_Left), Input.GetAxis(UnityInputAxis.MotionController_ThumbstickY_Left));
+
+        right.ThumbStickPosition = new Vector2(Input.GetAxis(UnityInputAxis.MotionController_ThumbstickX_Right), Input.GetAxis(UnityInputAxis.MotionController_ThumbstickY_Right));         
 
 #if TRACING_VERBOSE
         right.TraceState(PoseSource.Any);

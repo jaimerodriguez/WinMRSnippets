@@ -325,25 +325,14 @@ namespace WinMRSnippets.Samples
                             ), TraceVariables.InteractionManagerLoop);
                 }
                 var rootproperties = sourceState;
-#if UNITY_5
-            state.SelectValue = (float)rootproperties.selectPressedValue;
-            state.TouchPadXValue = (float)rootproperties.controllerProperties.touchpadX;
-            state.TouchPadYValue = (float)rootproperties.controllerProperties.touchpadY;
-            state.ThumbstickXValue = (float)rootproperties.controllerProperties.thumbstickX;
-            state.ThumbstickYValue = (float)rootproperties.controllerProperties.thumbstickY;
-            state.TouchPadPressed = rootproperties.controllerProperties.touchpadPressed;
-            state.TouchPadTouched = rootproperties.controllerProperties.touchpadTouched;
-            state.ThumbstickPressed = rootproperties.controllerProperties.thumbstickPressed;
-#else
+ 
                 state.SelectValue = rootproperties.selectPressedAmount;
-                state.TouchPadXValue = rootproperties.touchpadPosition.x;
-                state.TouchPadYValue = rootproperties.touchpadPosition.y;
-                state.ThumbstickXValue = rootproperties.thumbstickPosition.x;
-                state.ThumbstickYValue = rootproperties.thumbstickPosition.y;
+                state.TouchpadPosition = rootproperties.touchpadPosition;
+                state.ThumbStickPosition = rootproperties.thumbstickPosition;  
                 state.TouchPadPressed = rootproperties.touchpadPressed;
                 state.TouchPadTouched = rootproperties.touchpadTouched;
                 state.ThumbstickPressed = rootproperties.thumbstickPressed;
-#endif
+ 
 
                 state.SelectPressed = rootproperties.selectPressed;
                 state.MenuPressed = rootproperties.menuPressed;

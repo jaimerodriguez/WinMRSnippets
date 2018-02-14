@@ -122,15 +122,15 @@ namespace WinMRSnippets
             if (state.TouchPadPressed || state.TouchPadTouched)
             {
                 hasEvent = true;
-                sb.AppendFormat("TouchPad {0} {1} ({2},{3});",
+                sb.AppendFormat("TouchPad {0} {1} ({2});",
                     state.TouchPadPressed ? "Pressed" : "",
                     state.TouchPadTouched ? "Touched" : "",
-                    state.TouchPadXValue, state.TouchPadYValue);
+                    state.TouchpadPosition );
             }
             if (state.ThumbstickPressed)
             {
                 hasEvent = true;
-                sb.AppendFormat("Thumbstick pressed({0},{1});", state.ThumbstickXValue, state.ThumbstickYValue);
+                sb.AppendFormat("Thumbstick pressed({0});", state.ThumbStickPosition );
             }
             if (state.MenuPressed)
             {
@@ -162,10 +162,11 @@ namespace WinMRSnippets
                 }
             }
 
-            if (allChanges || (IsDifferent(state.ThumbstickXValue, diffState.ThumbstickXValue, floatThresholdForDifference) || IsDifferent(state.ThumbstickYValue, diffState.ThumbstickYValue, floatThresholdForDifference)))
+            if (allChanges || ( IsDifferent(state.ThumbStickPosition.x, diffState.ThumbStickPosition.x, floatThresholdForDifference) || 
+                                IsDifferent(state.ThumbStickPosition.y, diffState.ThumbStickPosition.y, floatThresholdForDifference)))
             {
                 hasNonDefaultValue = true;
-                sb.AppendFormat("Thumb:{0},{1}", state.ThumbstickXValue, state.ThumbstickYValue);
+                sb.AppendFormat("Thumb:{0}", state.ThumbStickPosition );
             }
 
             string message = sb.ToString();

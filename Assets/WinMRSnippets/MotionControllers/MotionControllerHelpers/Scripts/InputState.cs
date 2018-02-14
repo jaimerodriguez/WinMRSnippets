@@ -13,10 +13,12 @@ namespace WinMRSnippets
     public struct MotionControllerState
     {
         public float SelectValue;
-        public float TouchPadXValue;
-        public float TouchPadYValue;
-        public float ThumbstickXValue;
-        public float ThumbstickYValue;
+        public Vector2 TouchpadPosition;
+        //public float TouchPadXValue;
+        //public float TouchPadYValue;
+        public Vector2 ThumbStickPosition; 
+        //public float ThumbstickXValue;
+        //public float ThumbstickYValue;
         public bool SelectPressed;
         public bool MenuPressed;
         public bool GraspPressed;
@@ -40,6 +42,9 @@ namespace WinMRSnippets
         public uint Id;
         public bool IsLeftHand;
         public bool IsRightHand;
+
+        public Vector3 AngularVelocity; 
+
     }
 
 
