@@ -202,8 +202,14 @@ public class UnityInputListener : MonoBehaviour {
         right.ThumbStickPosition = new Vector2(Input.GetAxis(UnityInputAxis.MotionController_ThumbstickX_Right), Input.GetAxis(UnityInputAxis.MotionController_ThumbstickY_Right));         
 
 #if TRACING_VERBOSE
-        right.TraceState(PoseSource.Any);
-        left.TraceState(PoseSource.Any); 
+        bool hasNonDefaultValue, hasEvent; 
+        string traceState = right.GetTraceState(PoseSource.Any, true, out hasNonDefaultValue, out hasEvent);
+        if (hasEvent || hasNonDefaultValue)
+            Debug.Log(traceState);
+
+        traceState = left.GetTraceState(PoseSource.Any, true, out hasNonDefaultValue, out hasEvent);
+        if (hasEvent || hasNonDefaultValue)
+            Debug.Log(traceState);         
 #endif 
 
     }
