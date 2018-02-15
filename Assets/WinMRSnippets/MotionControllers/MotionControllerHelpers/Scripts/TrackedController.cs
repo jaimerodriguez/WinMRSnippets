@@ -38,6 +38,17 @@ namespace WinMRSnippets
             SourceId = defaultValue;  
         }
 
+
+        private void Start()
+        {
+            StartListeners(); 
+        }
+
+        private void Update()
+        {
+            // UpdatePose(); 
+        }
+
         private void StopListeners ()
         {
             InteractionManager.InteractionSourceDetected -= InteractionManager_InteractionSourceDetected;
@@ -95,12 +106,9 @@ namespace WinMRSnippets
                     InitializeSelf(args.state); 
                 }
 
-                UpdateState(args.state); 
-                  
-
-                //TODO: REMOVE 
-                //UpdateAxis(state);
-                //UpdatePose(state);
+                UpdateState(args.state);
+                UpdatePose(args.state.sourcePose);  
+                 
             }
         }
 
@@ -119,7 +127,7 @@ namespace WinMRSnippets
         void UninitializeSelf(InteractionSourceState state)
         {
 #if DEBUG
-            Debug.Assert(SourceId == defaultValue, "We expect to never initialize this instance without a proper SourceLost");
+             
 #endif
             SourceId = defaultValue ;
             IsActive = false ;
@@ -189,6 +197,9 @@ namespace WinMRSnippets
  
         void UpdatePose ( InteractionSourcePose pose )             
         {
+#if TRACING_VERBOSE 
+            Debug.Log("Updating pose for tracked controller");
+#endif 
             Vector3 angularVelocity, gripPosition, pointerPosition , pointerForward, gripForward ;
             Quaternion gripRotation, pointerRotation; 
             
@@ -272,7 +283,10 @@ namespace WinMRSnippets
             }
         }
 
-
+        public MotionControllerState GetState()
+        {
+            return _currentState; 
+        }
     }
 
 } 
