@@ -125,27 +125,107 @@ namespace WinMRSnippets
             IsActive = false ;
         }
 
-        //TODO INCOMPLETE 
-        void UpdateState ( InteractionSourceState state)
+        void UpdateControllerProperties ( InteractionSource source )
         {
-            _currentState.SelectPressed = state.selectPressed;
-            _currentState.SelectValue = state.selectPressedAmount;
-            _currentState.TouchpadPosition = state.touchpadPosition; 
-             
-        }
-
-        //TODO: Incomplete 
-        void UpdatePose ( InteractionSourcePose pose )             
-        {
-            Vector3 angularVelocity;
-            if (pose.TryGetAngularVelocity(out angularVelocity))
-            {
-                _currentState.AngularVelocity = angularVelocity; 
-            } 
+            _currentState.SupportsGrasp = source.supportsGrasp;
+            _currentState.SupportsMenu = source.supportsMenu;
+            _currentState.SupportsPointing = source.supportsPointing;
+            _currentState.SupportsTouchpad = source.supportsTouchpad;
+            _currentState.SupportsMenu = source.supportsMenu;
+            _currentState.VendorId = source.vendorId;
+            _currentState.ProductVersion = source.productVersion; 
+            _currentState.Id = source.id;
+            _currentState.IsLeftHand = source.handedness == InteractionSourceHandedness.Left;
+            _currentState.IsRightHand = source.handedness == InteractionSourceHandedness.Right; 
 
         }
+
+        void ResetState()
+        {
+            //ANalog properties 
+            _currentState.TouchpadPosition = Vector2.zero;
+            _currentState.ThumbStickPosition = Vector2.zero;
+            _currentState.SelectValue = 0f; 
+
+            
+            //POSE 
+            _currentState.GripPosition = Vector3.zero;
+            _currentState.GripRotation = Quaternion.identity; 
+            _currentState.PointerPosition = Vector3.zero;
+            _currentState.PointerRotation = Quaternion.identity;
+            _currentState.PointerForward = Vector3.zero;
+            _currentState.GripForward = Vector3.zero;
+            _currentState.AngularVelocity = Vector3.zero ;  
+
+
+            //Button Pressses          
+            _currentState.SelectPressed= false; 
+            _currentState.MenuPressed= false; 
+            _currentState.GraspPressed= false; 
+            _currentState.TouchPadPressed= false; 
+            _currentState.TouchPadTouched= false; 
+            _currentState.ThumbstickPressed= false; 
+
+        }
+
 
          
+        void UpdateState ( InteractionSourceState state)
+        {
+            // Analog properties 
+            _currentState.SelectValue = state.selectPressedAmount;
+            _currentState.TouchpadPosition = state.touchpadPosition;
+            _currentState.ThumbStickPosition = state.thumbstickPosition;
+
+            //Button presses 
+            _currentState.SelectPressed = state.selectPressed;
+            _currentState.MenuPressed = state.menuPressed ;
+            _currentState.GraspPressed = state.grasped;
+            _currentState.TouchPadPressed = state.touchpadPressed ;
+            _currentState.TouchPadTouched = state.touchpadTouched ;
+            _currentState.ThumbstickPressed = state.thumbstickPressed ;                         
+             
+        }
+ 
+        void UpdatePose ( InteractionSourcePose pose )             
+        {
+            Vector3 angularVelocity, gripPosition, pointerPosition , pointerForward, gripForward ;
+            Quaternion gripRotation, pointerRotation; 
+            
+            if ( pose.TryGetPosition( out gripPosition , InteractionSourceNode.Grip ))
+            {
+                _currentState.GripPosition = gripPosition;  
+            }
+            
+            if ( pose.TryGetPosition ( out pointerPosition , InteractionSourceNode.Pointer))
+            {
+                _currentState.PointerPosition = pointerPosition; 
+            }
+
+            if (pose.TryGetRotation(out pointerRotation , InteractionSourceNode.Pointer))
+            {
+                _currentState.PointerRotation = pointerRotation ;
+            }
+
+
+            if (pose.TryGetRotation(out gripRotation , InteractionSourceNode.Grip))
+            {
+                _currentState.GripRotation= gripRotation;
+            }
+
+            if ( pose.TryGetForward( out pointerForward, InteractionSourceNode.Pointer ))
+            {
+                _currentState.PointerForward = pointerForward; 
+            }
+
+            if (pose.TryGetAngularVelocity(out angularVelocity))
+            {
+                _currentState.AngularVelocity = angularVelocity;
+            }
+
+        }
+
+
         private bool IsTarget ( InteractionSourceState state )
         {
             if (state.source.kind == InteractionSourceKind.Controller && state.source.id == SourceId)
