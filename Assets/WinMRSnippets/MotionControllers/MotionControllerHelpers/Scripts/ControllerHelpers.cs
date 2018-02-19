@@ -81,16 +81,15 @@ namespace WinMRSnippets
             } 
             else
             {
-                Debug.Log(string.Format("Model {0} attached within {1} seconds" + productId, (Time.time - startTime)));
+                Debug.Log(string.Format("Model {0} attached within {1} seconds" ,  productId, (Time.time - startTime)));
             }
 #endif             
         }
 
 
-
-
         public static GameObject SpawnTouchpadVisualizer(Transform parentTransform, GameObject touchpad, Material material)
         {
+            Debug.Log("SpawnTouchpadVisualizer"); 
             GameObject touchVisualizer;
             if (touchpad != null)
             {

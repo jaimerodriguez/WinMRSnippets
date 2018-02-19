@@ -1,7 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See LICENSE in the project root for license information.
 
+#define EXPERIMENT_REMOVETOUCHPADVISUALIZER 
+
 using UnityEngine;
+using WinMRSnippets;
 
 namespace HoloToolkit.Unity.InputModule
 {
@@ -64,7 +67,11 @@ namespace HoloToolkit.Unity.InputModule
         /// <param name="childTransforms">The transforms of the glTF model.</param>
         /// <param name="visualizerScript">The script containing references to any objects to spawn.</param>
         //   public void LoadInfo(Transform[] childTransforms, MotionControllerVisualizer visualizerScript)
+#if !EXPERIMENT_REMOVETOUCHPADVISUALIZER
         public void LoadInfo(Transform[] childTransforms, WinMRSnippets.IControllerVisualizer visualizerScript)
+#else
+        public void LoadInfo(Transform parent, Transform[] childTransforms, Material material )
+#endif 
         {
             foreach (Transform child in childTransforms)
             {
@@ -192,7 +199,11 @@ namespace HoloToolkit.Unity.InputModule
                         }
                         break;
                     case "touch":
+#if !EXPERIMENT_REMOVETOUCHPADVISUALIZER
                         touchpadTouchVisualizer = visualizerScript.SpawnTouchpadVisualizer(child);
+#else
+                        touchpadTouchVisualizer = ControllerHelpers.SpawnTouchpadVisualizer(child, null , material); 
+#endif
                         break;
                 }
             }

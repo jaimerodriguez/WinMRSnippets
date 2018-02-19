@@ -1,5 +1,5 @@
 ﻿#define VERBOSE_STATE 
-
+#define EXPERIMENT_REMOVETOUCHPADVISUALIZER 
 using HoloToolkit.Unity.InputModule;
 using System.Collections;
 using System.Collections.Generic;
@@ -494,7 +494,11 @@ namespace WinMRSnippets.Samples
             if (AnimateControllerModel)
             {
                 var newControllerInfo = new MotionControllerInfo() { };
+#if !EXPERIMENT_REMOVETOUCHPADVISUALIZER
                 newControllerInfo.LoadInfo(target.GetComponentsInChildren<Transform>(), this);
+#else
+                newControllerInfo.LoadInfo(parent, target.GetComponentsInChildren<Transform>(), GLTFMaterial); 
+#endif
                 controllerInfoForAnimation.Add(source.id, newControllerInfo);
                 TraceHelper.Log("Controller added for animation");
             }

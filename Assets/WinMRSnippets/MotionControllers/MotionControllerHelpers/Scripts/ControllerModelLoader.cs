@@ -68,6 +68,9 @@ namespace WinMRSnippets
 
 
         private static ControllerModelProvider controllerModelProviderInstance;
+
+        private static uint activeExternalListeners = 0; 
+
         #endregion
 
 
@@ -97,12 +100,8 @@ namespace WinMRSnippets
 
         #region START & STOP LISTENERS 
         public void StartListening()
-        {
-            if (!IsListening)
-            {
-
-                _StartListeners();
-            }
+        {           
+             _StartListeners();             
         }
 
 
@@ -118,10 +117,16 @@ namespace WinMRSnippets
 
         private void _StartListeners()
         {
-#if TRACING_VERBOSE
-        Debug.Log("ControllerModelProvider::Starting listeners "); 
-#endif
+             
+            if ( IsListening )
+            {
+                activeExternalListeners++;
+                return; 
+            }
 
+#if TRACING_VERBOSE
+            Debug.Log("ControllerModelProvider::Starting listeners ");
+#endif
 
 #if UNITY_EDITOR && UNITY_WSA
             InteractionManager.InteractionSourceDetected += InteractionManager_InteractionSourceDetected;
@@ -145,6 +150,9 @@ namespace WinMRSnippets
 
         private void _StopListeners()
         {
+            --activeExternalListeners;
+            if (activeExternalListeners > 0)
+                return; 
 
 #if UNITY_EDITOR && UNITY_WSA
             InteractionManager.InteractionSourceDetected -= InteractionManager_InteractionSourceDetected;

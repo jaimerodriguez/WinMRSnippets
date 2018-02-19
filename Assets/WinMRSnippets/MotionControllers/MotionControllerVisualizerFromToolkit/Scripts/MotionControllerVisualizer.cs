@@ -356,7 +356,7 @@ namespace HoloToolkit.Unity.InputModule
                 var newControllerInfo = new MotionControllerInfo() { ControllerParent = parentGameObject };
                 if (AnimateControllerModel)
                 {
-                    newControllerInfo.LoadInfo(controllerModelGameObject.GetComponentsInChildren<Transform>(), this);
+                    newControllerInfo.LoadInfo( transform , controllerModelGameObject.GetComponentsInChildren<Transform>(), GLTFMaterial );
                 }
                 controllerDictionary.Add(id, newControllerInfo);
         }

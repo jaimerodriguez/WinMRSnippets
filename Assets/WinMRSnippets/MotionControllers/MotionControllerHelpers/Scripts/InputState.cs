@@ -46,7 +46,71 @@ namespace WinMRSnippets
         public bool IsLeftHand;
         public bool IsRightHand;
 
-        public Vector3 AngularVelocity; 
+        public Vector3 AngularVelocity;
+
+
+        public void ResetDynamicState()
+        {
+            //ANalog properties 
+            TouchpadPosition = Vector2.zero;
+            ThumbStickPosition = Vector2.zero;
+            SelectValue = 0f;
+
+
+            //POSE 
+            GripPosition = Vector3.zero;
+            GripRotation = Quaternion.identity;
+            PointerPosition = Vector3.zero;
+            PointerRotation = Quaternion.identity;
+            PointerForward = Vector3.zero;
+            GripForward = Vector3.zero;
+            AngularVelocity = Vector3.zero;
+
+
+            //Button Pressses          
+            SelectPressed = false;
+            MenuPressed = false;
+            GraspPressed = false;
+            TouchPadPressed = false;
+            TouchPadTouched = false;
+            ThumbstickPressed = false;
+
+        }
+
+        public void Reset ( uint defaultId, ushort defaultVendorId = 0, ushort defaultProductVersion = 0)
+        {
+            ResetDynamicState();
+            ResetStaticProperties( defaultId , defaultVendorId, defaultProductVersion ); 
+        }
+
+        private void ResetStaticProperties ( uint defaultId , ushort defaultVendorId  , ushort defaultProductVersion  )
+        {
+            SupportsGrasp = false ;
+            SupportsMenu =  false ;
+            SupportsPointing = false ;
+            SupportsTouchpad = false ;
+            SupportsThumbstick = false ;
+            VendorId = defaultVendorId  ;
+            ProductVersion = defaultProductVersion ;
+            Id = defaultId ;
+            IsLeftHand = false ;
+            IsRightHand = false ;
+        }
+        public void InitStaticProperties (InteractionSource source)
+        {
+            SupportsGrasp = source.supportsGrasp;
+            SupportsMenu = source.supportsMenu;
+            SupportsPointing = source.supportsPointing;
+            SupportsTouchpad = source.supportsTouchpad;
+            SupportsThumbstick = source.supportsThumbstick;
+            VendorId = source.vendorId;
+            ProductVersion = source.productVersion;
+            Id = source.id;
+            IsLeftHand = source.handedness == InteractionSourceHandedness.Left;
+            IsRightHand = source.handedness == InteractionSourceHandedness.Right;
+        }
+
+
 
     }
 
