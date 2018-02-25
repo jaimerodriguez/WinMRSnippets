@@ -8,6 +8,18 @@ using WinMRSnippets;
 
 namespace WinMRSnippets
 {
+    public class MotionControllerStateChangedEventArgs
+    {
+        public MotionControllerStateChangedEventArgs ( MotionControllerState state )
+        {
+            NewState = state; 
+        }
+
+        public MotionControllerState NewState { get; private set;  }
+
+    }
+
+    public delegate void MotionControllerStateChangedEventHandler (object sender, MotionControllerStateChangedEventArgs args); 
 
     [System.Flags ]
     public enum TrackedControllerAttributesEnum
@@ -18,11 +30,12 @@ namespace WinMRSnippets
         ButtonStates = ( 1 << 2 ), 
         All = ~0 
     }
+
     public class TrackedController : MonoBehaviour
     {
-        [Tooltip("Controllers hand")]
+        [Tooltip("Controller hand to track")]
         [SerializeField]
-        private InteractionSourceHandedness handedness;
+        private InteractionSourceHandedness handedness = InteractionSourceHandedness.Unknown ;
         public InteractionSourceHandedness Handedness { get { return handedness; } }
 
         [SerializeField]     
@@ -113,7 +126,7 @@ namespace WinMRSnippets
                 } 
 
 #if TRACING_VERBOSE
-                Debug.Log("TrackedController SourceDetected: " + SourceId); 
+                Debug.Log("TrackedController SourceDetected: " + (useSystemControllerModel? args.state.source.id : SourceId )); 
 #endif
 
             }
@@ -189,15 +202,16 @@ namespace WinMRSnippets
         }
 
         private void InteractionManager_InteractionSourceUpdated(InteractionSourceUpdatedEventArgs args)
-        {             
+        {
+             
+            if (!IsActive && args.state.source.handedness == this.handedness && args.state.source.kind == InteractionSourceKind.Controller )
+            {
+                InitializeSelf(args.state.source);
+            }
+
             if ( IsTarget(args.state) )
             {
-                if (!IsActive)
-                {
-                    InitializeSelf(args.state.source ); 
-                }
-
-                _currentState.ResetDynamicState(); 
+                 _currentState.ResetDynamicState(); 
 
                 UpdateState(args.state);
                 UpdatePose(args.state.sourcePose);
@@ -243,12 +257,25 @@ namespace WinMRSnippets
 
         void InitializeSelf ( InteractionSource source )
         {
+#if TRACING_VERBOSE
+            Debug.Log("Initializing tracked controller for " + source.id);
+#endif
+            //This can happen if there is an event while the controller model is loading. 
+            if (SourceId == source.id)
+            {
+                IsActive = true;
+                //This just confirms that StaticProperties have been initialzed 
+                Debug.Assert(_currentState.Id == SourceId); 
+            }
+            else
+            {
 #if DEBUG
-            Debug.Assert(SourceId == defaultValue, "We expect to never initialize this instance without a proper SourceLost");              
-#endif 
-            SourceId =   source.id;
-            IsActive = true;
-            UpdateControllerProperties( source); 
+                Debug.Assert(SourceId == defaultValue, "We expect to never initialize this instance without a proper SourceLost");
+#endif
+                SourceId = source.id;
+                IsActive = true;
+                UpdateControllerProperties(source);
+            } 
         }
 
         void UninitializeSelf(InteractionSource source )
@@ -348,23 +375,33 @@ namespace WinMRSnippets
                 _currentState.PointerPosition = pointerPosition; 
             }
 
+
+
             if (pose.TryGetRotation(out pointerRotation , InteractionSourceNode.Pointer))
             {
                 _currentState.PointerRotation = pointerRotation ;
             }
-
 
             if (pose.TryGetRotation(out gripRotation , InteractionSourceNode.Grip))
             {
                 _currentState.GripRotation= gripRotation;
             }
 
+
             if ( pose.TryGetForward( out pointerForward, InteractionSourceNode.Pointer ))
             {
                 _currentState.PointerForward = pointerForward; 
             }
 
-            if (pose.TryGetAngularVelocity(out angularVelocity))
+
+            if (pose.TryGetForward(out gripForward, InteractionSourceNode.Grip))
+            {
+                _currentState.GripForward = gripForward;
+            }
+
+
+
+            if (pose.TryGetAngularVelocity(out angularVelocity ))
             {
                 _currentState.AngularVelocity = angularVelocity;
             }             
@@ -379,33 +416,60 @@ namespace WinMRSnippets
 
         }
 
-        void UpdatePressed(InteractionSourcePressType pressType, InteractionSourceState state)
+
+        void UpdatePressed(InteractionSourcePressType pressType, InteractionSourceState state , bool isRelease , bool updateState = true )
         {
+            MotionControllerStateChangedEventHandler handler = null; 
+            if ( updateState )
+            {
+                UpdateState(state);
+                UpdatePose(state.sourcePose); 
+            }
+
             switch (pressType )
             {                 
                 case InteractionSourcePressType.Select:
-                    _currentState.SelectPressed = state.selectPressed;                     
+                    _currentState.SelectPressed = state.selectPressed;
+                    handler = (isRelease ? SelectReleased : SelectPressed);                     
                     break;                 
                 case InteractionSourcePressType.Grasp:
-                    _currentState.GraspPressed = state.grasped ;                     
+                    _currentState.GraspPressed = state.grasped ;
+                    handler = (isRelease ? GraspReleased : GraspPressed);
                     break;
                 case InteractionSourcePressType.Menu:
-                    _currentState.MenuPressed = state.menuPressed;                      
+                    _currentState.MenuPressed = state.menuPressed;
+                    handler = (isRelease ? MenuReleased : MenuPressed);
                     break;
                 case InteractionSourcePressType.Touchpad:
-                    _currentState.TouchPadPressed = state.touchpadPressed;                      
+                    _currentState.TouchPadPressed = state.touchpadPressed;
+                    handler = (isRelease ? TouchpadReleased : TouchpadPressed);
                     break;
                 case InteractionSourcePressType.Thumbstick:
-                    _currentState.ThumbstickPressed = state.thumbstickPressed;                      
+                    _currentState.ThumbstickPressed = state.thumbstickPressed;
+                    handler = (isRelease ? ThumbstickReleased : ThumbstickPressed);
                     break;
             }
+
+            if ( FireEvents && handler != null )
+            {
+                var eh = handler;
+                handler(this, new MotionControllerStateChangedEventArgs(_currentState)); 
+            }
         }  
+
+        bool FireEvents {
+            get
+            {
+                return (attributesToTrack & TrackedControllerAttributesEnum.FireEvents) != 0; 
+
+            }
+        }
+
         private void InteractionManager_InteractionSourcePressed(InteractionSourcePressedEventArgs args)
-        {
-             
+        {             
             if (IsTarget(args.state))
             {
-                UpdatePressed (args.pressType, args.state );
+                UpdatePressed (args.pressType, args.state , false );
             }
         }
 
@@ -413,7 +477,7 @@ namespace WinMRSnippets
         {             
             if ( IsTarget(args.state)) 
             {
-                UpdatePressed (args.pressType, args.state );
+                UpdatePressed (args.pressType, args.state , true );
             }
         }
 
@@ -421,6 +485,24 @@ namespace WinMRSnippets
         {
             return _currentState; 
         }
+
+
+
+        #region Controller Events 
+
+         
+        public event MotionControllerStateChangedEventHandler SelectPressed; 
+        public event MotionControllerStateChangedEventHandler SelectReleased;
+        public event MotionControllerStateChangedEventHandler GraspPressed;
+        public event MotionControllerStateChangedEventHandler GraspReleased;
+        public event MotionControllerStateChangedEventHandler MenuPressed;
+        public event MotionControllerStateChangedEventHandler MenuReleased;
+        public event MotionControllerStateChangedEventHandler ThumbstickPressed;
+        public event MotionControllerStateChangedEventHandler ThumbstickReleased;
+        public event MotionControllerStateChangedEventHandler TouchpadPressed;
+        public event MotionControllerStateChangedEventHandler TouchpadReleased;
+
+        #endregion
     }
 
 } 
