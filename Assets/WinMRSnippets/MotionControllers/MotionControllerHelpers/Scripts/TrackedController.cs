@@ -362,7 +362,7 @@ namespace WinMRSnippets
         void UpdatePose ( InteractionSourcePose pose )             
         {
 
-            Vector3 angularVelocity, gripPosition, pointerPosition , pointerForward, gripForward ;
+            Vector3 angularVelocity, velocity, gripPosition, pointerPosition , pointerForward, gripForward ;
             Quaternion gripRotation, pointerRotation; 
             
             if ( pose.TryGetPosition( out gripPosition , InteractionSourceNode.Grip ))
@@ -404,7 +404,13 @@ namespace WinMRSnippets
             if (pose.TryGetAngularVelocity(out angularVelocity ))
             {
                 _currentState.AngularVelocity = angularVelocity;
-            }             
+            }
+
+            if (pose.TryGetVelocity(out velocity))
+            {
+                _currentState.Velocity = velocity;
+            }
+             
         }
 
 

@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿#define TEST_VELOCITY 
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
  
@@ -49,7 +50,12 @@ namespace WinMRSnippets
                     forward = state.PointerForward;
                 }
 
-                forward *= maxLength; 
+#if TEST_VELOCITY
+                forward = state.Velocity; 
+#else 
+                forward *= maxLength;
+#endif 
+
                 lineRenderer.SetPosition(0, position);
                 lineRenderer.SetPosition(1, position + forward);
             }

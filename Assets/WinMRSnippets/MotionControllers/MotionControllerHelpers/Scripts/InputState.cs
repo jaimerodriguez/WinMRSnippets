@@ -47,6 +47,7 @@ namespace WinMRSnippets
         public bool IsRightHand;
 
         public Vector3 AngularVelocity;
+        public Vector3 Velocity; 
 
 
         public void ResetDynamicState()
@@ -65,7 +66,7 @@ namespace WinMRSnippets
             PointerForward = Vector3.zero;
             GripForward = Vector3.zero;
             AngularVelocity = Vector3.zero;
-
+            Velocity = Vector3.zero; 
 
             //Button Pressses          
             SelectPressed = false;
