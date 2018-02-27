@@ -113,6 +113,11 @@ namespace WinMRSnippets
         {
             InteractionSourceState state = args.state;
             InteractionSource source = state.source;
+
+#if TRACING_VERBOSE
+            if (source.kind == InteractionSourceKind.Controller && source.handedness == handedness)
+                Debug.Log("TrackedController SourceDetected: " + args.state.source.id);
+#endif            
             if (source.kind == InteractionSourceKind.Controller && source.handedness == handedness)
             {
                 // Note: when using a system controller model we delay initialization until control is fully loaded. 
@@ -124,24 +129,32 @@ namespace WinMRSnippets
                 {
                     InitializeSelf(args.state.source );
                 } 
-
-#if TRACING_VERBOSE
-                Debug.Log("TrackedController SourceDetected: " + (useSystemControllerModel? args.state.source.id : SourceId )); 
-#endif
-
             }
         }
 
         IEnumerator LoadControllerModel (InteractionSource source )
         {
-#if DEBUG 
+
+#if TRACING_VERBOSE
+            Debug.Log("LoadControllerModel " + source.id);
+#endif
+#if DEBUG
             if ( activeControllerModels.ContainsKey( source.id))
             {
                 string error = "We should not be loading a model on source we already have. This implies incorrect Lost/Detected sequence. "; 
                 Debug.Assert(false, error );
-                Debug.LogError(error);                  
+                Debug.LogError(error);    
+                
             }
 #endif 
+            if ( activeControllerModels.ContainsKey(source.id))
+            {
+                if ( !controllerModelsLoading.Contains(source.id))
+                {
+                     
+                }
+            }
+
             if (!controllerModelsLoading.Contains (source.id))
             {
                 GameObject go = new GameObject();
@@ -149,6 +162,12 @@ namespace WinMRSnippets
                 go.name = "Controller " + source.id;
                 controllerModelsLoading.Add(source.id);  
                 yield return ControllerHelpers.AttachModel(go, this.transform, source, controllerMaterial, controllerMaterial);
+                if (!controllerModelsLoading.Contains(source.id))
+                {
+                    Debug.Log("Destroying model that was lost while loading"); 
+                    Destroy(go);
+                    yield break ; 
+                }
                 activeControllerModels.Add(source.id, go);
                 InitializeSelf(source); 
                 if (animateSystemControllerModel)
@@ -176,11 +195,20 @@ namespace WinMRSnippets
                 Destroy(controllerModel);                
             }
 
-            MotionControllerInfo info;
+            MotionControllerInfo info;           
             if (activeMotionControllerInfo.TryGetValue(id, out info))
             {
                 activeMotionControllerInfo.Remove(id);  
-            } 
+            }
+
+#if TRACING_VERBOSE
+            Debug.Log(string.Format("Unload Controller Model for {0}. activeModels: {1}, activeControllerInfo: {2}, loading: {3} ",
+                id , activeControllerModels.Count, activeMotionControllerInfo.Count ,  controllerModelsLoading.Count ) );
+            if ( controllerModelsLoading.Contains(id))
+            {
+                controllerModelsLoading.Remove(id); 
+            }
+#endif
         }
 
         private void InteractionManager_InteractionSourceLost(InteractionSourceLostEventArgs args)
@@ -193,12 +221,6 @@ namespace WinMRSnippets
 #endif                 
                 UninitializeSelf(args.state.source );        
             }
-#if DEBUG
-            else
-            {  
-                Debug.Assert(args.state.source.handedness != handedness, "Having two controllers for same hand is not expected");
-            }
-#endif 
         }
 
         private void InteractionManager_InteractionSourceUpdated(InteractionSourceUpdatedEventArgs args)
@@ -206,7 +228,25 @@ namespace WinMRSnippets
              
             if (!IsActive && args.state.source.handedness == this.handedness && args.state.source.kind == InteractionSourceKind.Controller )
             {
-                InitializeSelf(args.state.source);
+                if (activeControllerModels.ContainsKey(args.state.source.id) || !useSystemControllerModel )
+                {
+#if TRACING_VERBOSE
+                    Debug.Log(string.Format("Update finds controller and initializes {0}. Loaded: {1}, systemmodel:{2}",
+                         args.state.source.id, activeControllerModels.ContainsKey(args.state.source.id), useSystemControllerModel)); 
+#endif  
+                    InitializeSelf(args.state.source);
+                } 
+                else
+                {
+                    if (!controllerModelsLoading.Contains(args.state.source.id))
+                    {
+#if TRACING_VERBOSE
+                        Debug.Log(string.Format("Update finds controller {0}. Starts Async loader", args.state.source.id));
+#endif          
+                        StartCoroutine(LoadControllerModel(args.state.source));
+                    } 
+                    return;  
+                }
             }
 
             if ( IsTarget(args.state) )
@@ -280,6 +320,9 @@ namespace WinMRSnippets
 
         void UninitializeSelf(InteractionSource source )
         {
+#if TRACING_VERBOSE
+            Debug.Log("Uninitializing " + source.id);
+#endif
             if ( source.id == SourceId)
             {
                 SourceId = defaultValue;
