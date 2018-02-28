@@ -15,7 +15,7 @@ public class ThrowableSequencer : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-        Physics.gravity = new Vector3(0, -1, 0); 
+        Physics.gravity = new Vector3(0, -9.81f, 0); 
         trackedController = GetComponent<TrackedController>();
         trackedController.SelectPressed += OnSelectPressed;
         trackedController.SelectReleased += OnSelectReleased;
@@ -35,15 +35,16 @@ public class ThrowableSequencer : MonoBehaviour {
         if ( throwTargetPrefab != null )
         {
             GameObject [] children = GameObject.FindGameObjectsWithTag("FootballContainer"); 
-            foreach ( var go in children )
-            {
-                Destroy(go);
-            }
+            //foreach ( var go in children )
+            //{
+            //    Destroy(go);
+            //}
 
             GameObject newChild = Instantiate(throwTargetPrefab);
             newChild.transform.parent = this.transform;
             newChild.transform.localPosition = Vector3.zero ;
-            newChild.transform.localRotation = Quaternion.Euler(90, 0, 0); 
+            // Tweaking angle so ball is released at a more naturally looking angle
+            newChild.transform.localRotation = Quaternion.Euler(140, 0, 0); 
              
         }
     }
@@ -102,10 +103,19 @@ public class ThrowableSequencer : MonoBehaviour {
                         args.NewState.GripPosition + objectAngularVelocity
                         ));
                     rb.transform.parent.transform.parent = null;
-                    rb.velocity = args.NewState.Velocity;
-                   //  rb.angularVelocity = args.NewState.AngularVelocity; 
+
+                    //rb.velocity = args.NewState.Velocity;
+                    //rb.angularVelocity = args.NewState.AngularVelocity; 
+
+                    // Eric updates
+                    rb.AddForce(objectVelocity * 0.8f, ForceMode.Impulse);
+                    rb.velocity = objectVelocity;
+
+                    rb.maxAngularVelocity = 25f;
+                    rb.AddRelativeTorque(new Vector3(0f, 0f, -100f), ForceMode.Impulse);
+
                     rb.isKinematic = false;
-                    rb.AddTorque(new Vector3(0, 0, .1f));
+                    rb.useGravity = true;
                 }
             } 
         }
