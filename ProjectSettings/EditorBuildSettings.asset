@@ -35,3 +35,6 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/WinMRSnippets-Examples/ThrowExploration/Scenes/ControllerVelocity.unity
     guid: c06f1a512b5fca248b75a0b7d7ba3807
+  - enabled: 1
+    path: Assets/WinMRSnippets-Examples/LaserSword/Scenes/Laser Sword.unity
+    guid: 69da0ed194eb7a041a20dfc85c079c03
