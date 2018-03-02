@@ -4,14 +4,13 @@
 
 using UnityEngine;
 using System.Collections;
+using UnityEngine.XR;
+using UnityEngine.XR.WSA.Input;
 
 namespace DigitalRuby.LaserSword
 {
     public class LaserSwordScript : MonoBehaviour
     {
-        //[Tooltip("Root game object.")]
-        //public GameObject Root;
-
         [Tooltip("Hilt game object.")]
         public GameObject Hilt;
 
@@ -56,13 +55,14 @@ namespace DigitalRuby.LaserSword
         private float bladeTime;
         private float bladeIntensity;
 
+        private bool pressedTrigger = false;
+
         private void CheckState()
         {
             if (state == 2 || state == 3)
             {
                 bladeTime += Time.deltaTime;
                 float percent = Mathf.Lerp(0.01f, 1.0f, bladeTime / ActivationTime);
-                //Vector3 end = temporaryBladeStart.transform.position + (Root.transform.up * bladeDir * percent * creationScript.BladeHeight);
                 Vector3 end = temporaryBladeStart.transform.position + (transform.up * bladeDir * percent * creationScript.BladeHeight);
                 BladeEnd.transform.position = end;
                 bladeIntensity = (state == 3 ? percent : (1.0f - percent));
@@ -96,10 +96,9 @@ namespace DigitalRuby.LaserSword
             else
             {
                 Blade.SetActive(true);
-                BladeGlow.gameObject.SetActive(true);
+                //BladeGlow.gameObject.SetActive(true);
             }
             BladeGlow.SetColors(new Color(1.0f, 1.0f, 1.0f, bladeIntensity), new Color(1.0f, 1.0f, 1.0f, bladeIntensity));
-            //BladeGlow.SetPosition(0, BladeStart.transform.position - (Root.transform.up * creationScript.BladeHeight * 0.075f));
             BladeGlow.SetPosition(0, BladeStart.transform.position - (transform.up * creationScript.BladeHeight * 0.075f));
             BladeGlow.SetPosition(1, BladeEnd.transform.position);
             Light.intensity = percent;
@@ -107,6 +106,8 @@ namespace DigitalRuby.LaserSword
 
         private void Start()
         {
+            InteractionManager.InteractionSourcePressed += InteractionManager_InteractionSourcePressed;
+            InteractionManager.InteractionSourceReleased += InteractionManager_InteractionSourceReleased;
             creationScript = GetComponent<LaserSwordBladeCreatorScript>();
             BladeEnd.transform.position = BladeStart.transform.position;
         }
@@ -130,7 +131,6 @@ namespace DigitalRuby.LaserSword
             }
             temporaryBladeStart = new GameObject("LaserSwordTemporaryBladeStart");
             temporaryBladeStart.hideFlags = HideFlags.HideAndDontSave;
-            //temporaryBladeStart.transform.parent = Root.transform;
             temporaryBladeStart.transform.parent = transform;
             temporaryBladeStart.transform.position = BladeEnd.transform.position;
 
@@ -184,6 +184,26 @@ namespace DigitalRuby.LaserSword
             {
                 Deactivate();
             }
+        }
+
+        private void InteractionManager_InteractionSourcePressed(InteractionSourcePressedEventArgs obj)
+        {
+            if (obj.state.selectPressedAmount > 0.1f && !pressedTrigger)
+            {
+                Debug.Log("Select Pressed");
+                TurnOn(true);
+                pressedTrigger = true;
+            }
+        }
+
+        private void InteractionManager_InteractionSourceReleased(InteractionSourceReleasedEventArgs obj)
+        {
+            if (pressedTrigger)
+            {
+                TurnOn(false);
+                pressedTrigger = false;
+            }
+
         }
     }
 }
