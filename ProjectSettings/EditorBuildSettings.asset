@@ -32,7 +32,7 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/WinMRSnippets-Examples/SpacesandXRDevice/BoundariesAndSpacesTrackedPoseDriverUnchecked.unity
     guid: 30ce612206744584dbb2acbdb167461b
-  - enabled: 1
+  - enabled: 0
     path: Assets/WinMRSnippets-Examples/ThrowExploration/Scenes/ControllerVelocity.unity
     guid: c06f1a512b5fca248b75a0b7d7ba3807
   - enabled: 1

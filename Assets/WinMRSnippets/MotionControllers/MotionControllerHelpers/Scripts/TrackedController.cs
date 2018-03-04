@@ -78,7 +78,8 @@ namespace WinMRSnippets
 
         private void Awake()
         {
-            SourceId = defaultValue;  
+            SourceId = defaultValue;
+            
             if (this.useSystemControllerModel )
             {
                 ControllerModelProvider.Instance.StartListening();

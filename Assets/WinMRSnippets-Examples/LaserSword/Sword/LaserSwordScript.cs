@@ -1,6 +1,8 @@
 ﻿// LaserSword for Unity
 // (c) 2016 Digital Ruby, LLC
 // http://www.digitalruby.com
+// 
+// the UX for the light sabers comes from https://github.com/jjxtra/UnityLightsaber/tree/master/Assets/LaserSword
 
 using UnityEngine;
 using System.Collections;
@@ -57,6 +59,10 @@ namespace DigitalRuby.LaserSword
 
         private bool pressedTrigger = false;
 
+
+        WinMRSnippets.TrackedController trackedController; 
+
+
         private void CheckState()
         {
             if (state == 2 || state == 3)
@@ -106,10 +112,30 @@ namespace DigitalRuby.LaserSword
 
         private void Start()
         {
-            InteractionManager.InteractionSourcePressed += InteractionManager_InteractionSourcePressed;
-            InteractionManager.InteractionSourceReleased += InteractionManager_InteractionSourceReleased;
+            trackedController = GetComponent<WinMRSnippets.TrackedController>();
+            trackedController.SelectPressed += TrackedController_SelectPressed;
+            trackedController.SelectReleased += TrackedController_SelectReleased;
             creationScript = GetComponent<LaserSwordBladeCreatorScript>();
             BladeEnd.transform.position = BladeStart.transform.position;
+        }
+
+        private void TrackedController_SelectReleased(object sender, WinMRSnippets.MotionControllerStateChangedEventArgs args)
+        {
+            if (pressedTrigger)
+            {
+                TurnOn(false);
+                pressedTrigger = false;
+            }
+        }
+
+        private void TrackedController_SelectPressed(object sender, WinMRSnippets.MotionControllerStateChangedEventArgs args)
+        {
+            if (args.NewState.SelectValue > 0.1f && !pressedTrigger)
+            {
+                Debug.Log("Select Pressed");
+                TurnOn(true);
+                pressedTrigger = true;
+            }
         }
 
         private void Update()
@@ -185,25 +211,6 @@ namespace DigitalRuby.LaserSword
                 Deactivate();
             }
         }
-
-        private void InteractionManager_InteractionSourcePressed(InteractionSourcePressedEventArgs obj)
-        {
-            if (obj.state.selectPressedAmount > 0.1f && !pressedTrigger)
-            {
-                Debug.Log("Select Pressed");
-                TurnOn(true);
-                pressedTrigger = true;
-            }
-        }
-
-        private void InteractionManager_InteractionSourceReleased(InteractionSourceReleasedEventArgs obj)
-        {
-            if (pressedTrigger)
-            {
-                TurnOn(false);
-                pressedTrigger = false;
-            }
-
-        }
+ 
     }
 }

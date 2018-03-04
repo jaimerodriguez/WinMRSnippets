@@ -1,4 +1,6 @@
-﻿using System.Collections;
+﻿// #define USE_THROWING_AVERAGES 
+#define USE_THROWING_SCRIPTS 
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using WinMRSnippets; 
@@ -83,16 +85,35 @@ public class ThrowableSequencer : MonoBehaviour {
             Debug.Log("Throwing"); 
 #endif
                     visualizer.SetVectors(0, args.NewState.GripPosition, args.NewState.GripPosition + args.NewState.Velocity);
-                    visualizer.SetVectors(1, args.NewState.GripPosition, args.NewState.GripPosition + args.NewState.AngularVelocity);
-                    visualizer.SetVectors(2, args.NewState.GripPosition, args.NewState.GripPosition + GetAverageVelicity());
+                    visualizer.SetVectors(1, args.NewState.GripPosition, args.NewState.GripPosition + GetAverageVelicity());                   
+                    Vector3 throwingScriptVelocity, throwingScriptAngularVelocity;
+                    Throwing.GetThrownObjectVelAngVel(args.NewState.GripPosition, args.NewState.Velocity, args.NewState.AngularVelocity,
+                        rb.transform.TransformPoint(rb.centerOfMass), out throwingScriptVelocity, out throwingScriptAngularVelocity);
+
+                    visualizer.SetVectors(2, args.NewState.GripPosition, args.NewState.GripPosition + throwingScriptVelocity);
+
+                    visualizer.SetVectors(3, args.NewState.GripPosition, args.NewState.GripPosition + args.NewState.AngularVelocity);
 
 
                     Vector3 objectVelocity, objectAngularVelocity;
+                    float forceMuliplier = 1.0f;
+
+#if USETHROWING_SCRIPTS
+                    objectVelocity = throwingScriptVelocity; 
+                    objectAngularVelocity = throwingScriptAngularVelocity;
+                    forceMuliplier = 1.0f; 
+#elif USE_THROWING_AVERAGES
+                    objectVelocity = GetAverageVelicity(5); 
+                    objectAngularVelocity = args.NewState.AngularVelocity;
+                    forceMuliplier = 1.0f;
+
+#else
 
 
-                    Throwing.GetThrownObjectVelAngVel(args.NewState.GripPosition, args.NewState.Velocity, args.NewState.AngularVelocity,
-                        rb.transform.TransformPoint(rb.centerOfMass), out objectVelocity, out objectAngularVelocity);
-
+                    objectVelocity = args.NewState.Velocity;
+                    objectAngularVelocity = args.NewState.AngularVelocity; 
+                    forceMuliplier = .8f; 
+#endif
                     visualizer.SetVectors(3, args.NewState.GripPosition, args.NewState.GripPosition + objectVelocity);
                     // visualizer.SetVectors(3, args.NewState.GripPosition, args.NewState.GripPosition + objectAngularVelocity  );
                     Debug.Log(string.Format("origin:{0}, velo:{1},ang{2}, obj velo{3}, obj ang{4} ",
@@ -108,7 +129,7 @@ public class ThrowableSequencer : MonoBehaviour {
                     //rb.angularVelocity = args.NewState.AngularVelocity; 
 
                     // Eric updates
-                    rb.AddForce(objectVelocity * 0.8f, ForceMode.Impulse);
+                    rb.AddForce(objectVelocity * forceMuliplier, ForceMode.Impulse);
                     rb.velocity = objectVelocity;
 
                     rb.maxAngularVelocity = 25f;
@@ -128,10 +149,13 @@ public class ThrowableSequencer : MonoBehaviour {
     int readings = 0; 
     bool isRecording = false;  
 
-    Vector3 GetLastVelocities ( )
+    Vector3 AverageNLastVelocities( int desired )
     {
         int start = readings % historicalVelocities.Length;
-        int desired = 5; 
+        int max = System.Math.Max(historicalVelocities.Length, readings); 
+        if (desired > max)
+            desired = max ;
+        
         int accounted = 0; 
         Vector3 sum = Vector3.zero; 
         for ( int x = start-1; x >= 0 && accounted < desired ; x-- )
@@ -150,17 +174,10 @@ public class ThrowableSequencer : MonoBehaviour {
         return sum / accounted; 
     }
 
-    Vector3 GetAverageVelicity ()
+    Vector3 GetAverageVelicity ( int desired = 8 )
     {
-        return GetLastVelocities(); 
-
-        int totalReadings = Mathf.Max(readings, historicalVelocities.Length );
-        Vector3 sum = Vector3.zero; 
-        for (int x = 0; x < totalReadings; x++ )
-        {
-            sum += historicalVelocities[x]; 
-        }
-        return sum / totalReadings; 
+        return AverageNLastVelocities( desired ); 
+ 
     }
 
     // Update is called once per frame
